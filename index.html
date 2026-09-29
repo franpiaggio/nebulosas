@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Reconstrucción de una nebulosa a partir de funciones gaussianas y estrellas analíticas. Canvas 2D, sin imágenes ni dependencias externas.">
-<title>Nebulosa — reconstrucción en código</title>
+<meta name="description" content="A nebula playground drawn entirely in code: the Lagoon Nebula (M8) reconstructed on canvas, generated nebula types, palettes, shapes and star editing. No images, no dependencies.">
+<title>Nebulae in code</title>
 <style>
 :root{
   color-scheme:dark;
@@ -171,38 +171,38 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <body>
 <div class="app">
 <main class="stage">
-<figure aria-label="Nebulosa dibujada por código.">
-<canvas id="nebula" role="img" aria-label="Nebulosa dibujada por código con capas gaussianas de luz, polvo y estrellas.">Tu navegador necesita soporte de Canvas 2D.</canvas>
-<div id="loading" role="status">Calculando la luz…</div>
-<div class="caption" aria-live="polite"><span id="caption-name">Laguna</span><span id="caption-note">Reconstrucción de M8</span></div>
-<div id="busy" role="status" hidden>Generando…</div>
+<figure aria-label="Nebula drawn in code.">
+<canvas id="nebula" role="img" aria-label="Nebula drawn in code from Gaussian layers of light, dust and stars.">Your browser needs Canvas 2D support.</canvas>
+<div id="loading" role="status">Computing the light…</div>
+<div class="caption" aria-live="polite"><span id="caption-name">Lagoon</span><span id="caption-note">Reconstruction of M8</span></div>
+<div id="busy" role="status" hidden>Generating…</div>
 <div id="hint" role="status" hidden></div>
 </figure>
 </main>
 
-<form id="panel" aria-busy="true" aria-label="Controles">
-<div class="tabs" role="tablist" aria-label="Qué editar">
-<button id="tab-nebula" type="button" role="tab" aria-selected="true" aria-controls="pane-nebula" data-action="tab" data-tab="nebula" disabled>Nebulosa</button>
-<button id="tab-stars" type="button" role="tab" aria-selected="false" aria-controls="pane-stars" data-action="tab" data-tab="stars" disabled>Estrellas<span id="tab-star-count"></span></button>
+<form id="panel" aria-busy="true" aria-label="Controls">
+<div class="tabs" role="tablist" aria-label="What to edit">
+<button id="tab-nebula" type="button" role="tab" aria-selected="true" aria-controls="pane-nebula" data-action="tab" data-tab="nebula" disabled>Nebula</button>
+<button id="tab-stars" type="button" role="tab" aria-selected="false" aria-controls="pane-stars" data-action="tab" data-tab="stars" disabled>Stars<span id="tab-star-count"></span></button>
 </div>
 <div class="scroll">
 
 <div id="pane-nebula" role="tabpanel" aria-labelledby="tab-nebula">
 <section class="group" aria-labelledby="h-type">
-<h2 id="h-type">Tipo</h2>
+<h2 id="h-type">Type</h2>
 <details class="type-picker" id="type-picker">
-<summary><span id="type-current-icon" class="type-icon" aria-hidden="true"></span><span id="type-current">Laguna</span><span class="chevron" aria-hidden="true"></span></summary>
+<summary><span id="type-current-icon" class="type-icon" aria-hidden="true"></span><span id="type-current">Lagoon</span><span class="chevron" aria-hidden="true"></span></summary>
 <div class="tiles" role="radiogroup" aria-labelledby="h-type">
-<label class="pick"><input type="radio" name="type" value="laguna" checked disabled><span><svg viewBox="0 0 24 24"><path d="M5 15c-2-1-2-5 1-6 0-3 4-5 6-3 2-2 6-1 6 2 3 0 4 4 2 6 1 2-1 5-4 4-2 2-6 2-7 0-3 1-5-1-4-3z"/><circle cx="13" cy="12" r="1.6"/></svg>Laguna</span></label>
-<label class="pick"><input type="radio" name="type" value="planetaria" disabled><span><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="7"/><ellipse cx="12" cy="12" rx="4.5" ry="3.8"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>Planetaria</span></label>
+<label class="pick"><input type="radio" name="type" value="laguna" checked disabled><span><svg viewBox="0 0 24 24"><path d="M5 15c-2-1-2-5 1-6 0-3 4-5 6-3 2-2 6-1 6 2 3 0 4 4 2 6 1 2-1 5-4 4-2 2-6 2-7 0-3 1-5-1-4-3z"/><circle cx="13" cy="12" r="1.6"/></svg>Lagoon</span></label>
+<label class="pick"><input type="radio" name="type" value="planetaria" disabled><span><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="7"/><ellipse cx="12" cy="12" rx="4.5" ry="3.8"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>Planetary</span></label>
 <label class="pick"><input type="radio" name="type" value="bipolar" disabled><span><svg viewBox="0 0 24 24"><ellipse cx="7.8" cy="7.8" rx="5.6" ry="3.4" transform="rotate(45 7.8 7.8)"/><ellipse cx="16.2" cy="16.2" rx="5.6" ry="3.4" transform="rotate(45 16.2 16.2)"/><circle cx="12" cy="12" r=".9" fill="currentColor"/></svg>Bipolar</span></label>
 <label class="pick"><input type="radio" name="type" value="supernova" disabled><span><svg viewBox="0 0 24 24"><path d="M5 9a8 8 0 0 1 9-5M18 6a8 8 0 0 1 2 8M19 17a8 8 0 0 1-8 3M7 19a8 8 0 0 1-3-6"/><path d="M8 10a5 5 0 0 1 4-3M16 12a4 4 0 0 1-3 4" opacity=".6"/></svg>Supernova</span></label>
-<label class="pick"><input type="radio" name="type" value="pilares" disabled><span><svg viewBox="0 0 24 24"><path d="M5 21c0-6 1-11 2.5-12S10 15 10 21M11 21c0-8 1.5-15 3-15s2.5 7 2.5 15M17 21c0-5 1-8 2-8s1.5 3 1.5 8"/></svg>Pilares</span></label>
-<label class="pick"><input type="radio" name="type" value="reflexion" disabled><span><svg viewBox="0 0 24 24"><path d="M9 4v6M6 7h6M16 11v5M13.5 13.5h5M7 15v4M5 17h4"/><path d="M3 20c5-3 13-12 18-15" opacity=".45"/></svg>Reflexión</span></label>
+<label class="pick"><input type="radio" name="type" value="pilares" disabled><span><svg viewBox="0 0 24 24"><path d="M5 21c0-6 1-11 2.5-12S10 15 10 21M11 21c0-8 1.5-15 3-15s2.5 7 2.5 15M17 21c0-5 1-8 2-8s1.5 3 1.5 8"/></svg>Pillars</span></label>
+<label class="pick"><input type="radio" name="type" value="reflexion" disabled><span><svg viewBox="0 0 24 24"><path d="M9 4v6M6 7h6M16 11v5M13.5 13.5h5M7 15v4M5 17h4"/><path d="M3 20c5-3 13-12 18-15" opacity=".45"/></svg>Reflection</span></label>
 </div>
 </details>
-<div class="variant"><small>Variante <span id="seed-value">1</span></small><button class="btn" type="button" data-action="reroll" disabled>Otra variante</button></div>
-<div class="variant move-row"><button id="move-button" class="btn" type="button" data-action="move" aria-pressed="false" disabled>Mover en la imagen</button><button id="center-button" class="btn quiet" type="button" data-action="center" disabled>Centrar</button></div>
+<div class="variant"><small>Variant <span id="seed-value">1</span></small><button class="btn" type="button" data-action="reroll" disabled>New variant</button></div>
+<div class="variant move-row"><button id="move-button" class="btn" type="button" data-action="move" aria-pressed="false" disabled>Move on the image</button><button id="center-button" class="btn quiet" type="button" data-action="center" disabled>Recenter</button></div>
 </section>
 
 <section class="group" aria-labelledby="h-color">
@@ -210,29 +210,29 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <div class="swatches" role="radiogroup" aria-labelledby="h-color">
 <label class="pick"><input type="radio" name="preset" value="original" checked disabled><span><i data-swatch="original"></i>Original</span></label>
 <label class="pick"><input type="radio" name="preset" value="hubble" disabled><span><i data-swatch="hubble"></i>Hubble</span></label>
-<label class="pick"><input type="radio" name="preset" value="hielo" disabled><span><i data-swatch="hielo"></i>Hielo</span></label>
-<label class="pick"><input type="radio" name="preset" value="fuego" disabled><span><i data-swatch="fuego"></i>Fuego</span></label>
-<label class="pick"><input type="radio" name="preset" value="esmeralda" disabled><span><i data-swatch="esmeralda"></i>Esmeralda</span></label>
-<label class="pick"><input type="radio" name="preset" value="violeta" disabled><span><i data-swatch="violeta"></i>Violeta</span></label>
+<label class="pick"><input type="radio" name="preset" value="hielo" disabled><span><i data-swatch="hielo"></i>Ice</span></label>
+<label class="pick"><input type="radio" name="preset" value="fuego" disabled><span><i data-swatch="fuego"></i>Fire</span></label>
+<label class="pick"><input type="radio" name="preset" value="esmeralda" disabled><span><i data-swatch="esmeralda"></i>Emerald</span></label>
+<label class="pick"><input type="radio" name="preset" value="violeta" disabled><span><i data-swatch="violeta"></i>Violet</span></label>
 <label class="pick"><input type="radio" name="preset" value="mono" disabled><span><i data-swatch="mono"></i>Mono</span></label>
 </div>
 <div class="slider">
-<label for="hue">Girar el tono</label><output id="hue-value" for="hue">sin girar</output>
+<label for="hue">Hue shift</label><output id="hue-value" for="hue">none</output>
 <input id="hue" name="hue" type="range" min="0" max="359" step="1" value="0" disabled>
 </div>
 </section>
 
 <section class="group" aria-labelledby="h-shape">
-<h2 id="h-shape">Forma</h2>
+<h2 id="h-shape">Shape</h2>
 <div class="chips" role="radiogroup" aria-labelledby="h-shape">
-<label class="pick"><input type="radio" name="shape" value="original" checked disabled><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg>Sin cambios</span></label>
-<label class="pick"><input type="radio" name="shape" value="remolino" disabled><span><svg viewBox="0 0 24 24"><path d="M12 12a1.3 1.3 0 1 1 1.4 1.4 3 3 0 1 1 1.7-3.6 5 5 0 1 1-5.2-2.9 7.3 7.3 0 1 1-6.1 5.9"/></svg>Remolino</span></label>
-<label class="pick"><input type="radio" name="shape" value="inflar" disabled><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>Inflar</span></label>
-<label class="pick"><input type="radio" name="shape" value="turbulencia" disabled><span><svg viewBox="0 0 24 24"><path d="M3 8c3-3 5 3 9 0s6 3 9 0M3 13c3-3 5 3 9 0s6 3 9 0M3 18c3-3 5 3 9 0s6 3 9 0"/></svg>Turbulencia</span></label>
-<label class="pick"><input type="radio" name="shape" value="espejo" disabled><span><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 2"/><path d="M10 7c-4 0-6 3-6 5s2 5 6 5M14 7c4 0 6 3 6 5s-2 5-6 5"/></svg>Espejo</span></label>
+<label class="pick"><input type="radio" name="shape" value="original" checked disabled><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg>None</span></label>
+<label class="pick"><input type="radio" name="shape" value="remolino" disabled><span><svg viewBox="0 0 24 24"><path d="M12 12a1.3 1.3 0 1 1 1.4 1.4 3 3 0 1 1 1.7-3.6 5 5 0 1 1-5.2-2.9 7.3 7.3 0 1 1-6.1 5.9"/></svg>Swirl</span></label>
+<label class="pick"><input type="radio" name="shape" value="inflar" disabled><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>Bulge</span></label>
+<label class="pick"><input type="radio" name="shape" value="turbulencia" disabled><span><svg viewBox="0 0 24 24"><path d="M3 8c3-3 5 3 9 0s6 3 9 0M3 13c3-3 5 3 9 0s6 3 9 0M3 18c3-3 5 3 9 0s6 3 9 0"/></svg>Turbulence</span></label>
+<label class="pick"><input type="radio" name="shape" value="espejo" disabled><span><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 2"/><path d="M10 7c-4 0-6 3-6 5s2 5 6 5M14 7c4 0 6 3 6 5s-2 5-6 5"/></svg>Mirror</span></label>
 </div>
 <div class="slider amount-slider">
-<label for="amount">Intensidad</label><output id="amount-value" for="amount">60</output>
+<label for="amount">Strength</label><output id="amount-value" for="amount">60</output>
 <input id="amount" name="amount" type="range" min="0" max="100" step="1" value="60" disabled>
 </div>
 </section>
@@ -241,29 +241,29 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 
 <div id="pane-stars" role="tabpanel" aria-labelledby="tab-stars" hidden>
 <section class="group" aria-labelledby="h-field">
-<h2 id="h-field">Campo de estrellas</h2>
-<label class="switch">Estrellas originales de la Laguna<input id="lagoon-stars" name="lagoonStars" type="checkbox" checked disabled></label>
-<h3>Sumar estrellas generadas</h3>
-<div class="slider"><label for="count-fondo"><i class="dot fondo"></i>De fondo</label><output id="count-fondo-value">0</output><input id="count-fondo" name="count" data-kind="fondo" type="range" min="0" max="6000" step="50" value="0" disabled></div>
-<div class="slider"><label for="count-sol"><i class="dot sol"></i>Tipo Sol</label><output id="count-sol-value">0</output><input id="count-sol" name="count" data-kind="sol" type="range" min="0" max="600" step="10" value="0" disabled></div>
-<div class="slider"><label for="count-rojas"><i class="dot rojas"></i>Enanas rojas</label><output id="count-rojas-value">0</output><input id="count-rojas" name="count" data-kind="rojas" type="range" min="0" max="1000" step="10" value="0" disabled></div>
-<div class="slider"><label for="count-azules"><i class="dot azules"></i>Gigantes azules</label><output id="count-azules-value">0</output><input id="count-azules" name="count" data-kind="azules" type="range" min="0" max="100" step="1" value="0" disabled></div>
-<div class="slider"><label for="count-destellos"><i class="dot destellos"></i>Destellos</label><output id="count-destellos-value">0</output><input id="count-destellos" name="count" data-kind="destellos" type="range" min="0" max="20" step="1" value="0" disabled></div>
-<div class="row"><button class="btn" type="button" data-action="starReroll" disabled>Nuevo campo de estrellas</button><button class="btn quiet" type="button" data-action="starReset" disabled>Deshacer clics</button></div>
+<h2 id="h-field">Star field</h2>
+<label class="switch">Original Lagoon stars<input id="lagoon-stars" name="lagoonStars" type="checkbox" checked disabled></label>
+<h3>Add generated stars</h3>
+<div class="slider"><label for="count-fondo"><i class="dot fondo"></i>Background</label><output id="count-fondo-value">0</output><input id="count-fondo" name="count" data-kind="fondo" type="range" min="0" max="6000" step="50" value="0" disabled></div>
+<div class="slider"><label for="count-sol"><i class="dot sol"></i>Sun-like</label><output id="count-sol-value">0</output><input id="count-sol" name="count" data-kind="sol" type="range" min="0" max="600" step="10" value="0" disabled></div>
+<div class="slider"><label for="count-rojas"><i class="dot rojas"></i>Red dwarfs</label><output id="count-rojas-value">0</output><input id="count-rojas" name="count" data-kind="rojas" type="range" min="0" max="1000" step="10" value="0" disabled></div>
+<div class="slider"><label for="count-azules"><i class="dot azules"></i>Blue giants</label><output id="count-azules-value">0</output><input id="count-azules" name="count" data-kind="azules" type="range" min="0" max="100" step="1" value="0" disabled></div>
+<div class="slider"><label for="count-destellos"><i class="dot destellos"></i>Spiked stars</label><output id="count-destellos-value">0</output><input id="count-destellos" name="count" data-kind="destellos" type="range" min="0" max="20" step="1" value="0" disabled></div>
+<div class="row"><button class="btn" type="button" data-action="starReroll" disabled>New star field</button><button class="btn quiet" type="button" data-action="starReset" disabled>Undo clicks</button></div>
 </section>
 <section class="group" aria-labelledby="h-clicks">
-<h2 id="h-clicks">Editar con clics</h2>
-<div class="segmented" role="radiogroup" aria-label="Herramienta">
-<label class="pick"><input type="radio" name="tool" value="look" disabled><span>Mirar</span></label>
-<label class="pick"><input type="radio" name="tool" value="add" checked disabled><span>Agregar</span></label>
-<label class="pick"><input type="radio" name="tool" value="erase" disabled><span>Borrar</span></label>
+<h2 id="h-clicks">Click editing</h2>
+<div class="segmented" role="radiogroup" aria-label="Tool">
+<label class="pick"><input type="radio" name="tool" value="look" disabled><span>View</span></label>
+<label class="pick"><input type="radio" name="tool" value="add" checked disabled><span>Add</span></label>
+<label class="pick"><input type="radio" name="tool" value="erase" disabled><span>Erase</span></label>
 </div>
-<div class="chips kinds" role="radiogroup" aria-label="Qué estrella agregar">
-<label class="pick"><input type="radio" name="toolKind" value="destellos" checked disabled><span><i class="dot destellos"></i>Destello</span></label>
-<label class="pick"><input type="radio" name="toolKind" value="azules" disabled><span><i class="dot azules"></i>Gigante azul</span></label>
-<label class="pick"><input type="radio" name="toolKind" value="sol" disabled><span><i class="dot sol"></i>Tipo Sol</span></label>
-<label class="pick"><input type="radio" name="toolKind" value="rojas" disabled><span><i class="dot rojas"></i>Enana roja</span></label>
-<label class="pick"><input type="radio" name="toolKind" value="fondo" disabled><span><i class="dot fondo"></i>De fondo</span></label>
+<div class="chips kinds" role="radiogroup" aria-label="Star to add">
+<label class="pick"><input type="radio" name="toolKind" value="destellos" checked disabled><span><i class="dot destellos"></i>Spiked star</span></label>
+<label class="pick"><input type="radio" name="toolKind" value="azules" disabled><span><i class="dot azules"></i>Blue giant</span></label>
+<label class="pick"><input type="radio" name="toolKind" value="sol" disabled><span><i class="dot sol"></i>Sun-like</span></label>
+<label class="pick"><input type="radio" name="toolKind" value="rojas" disabled><span><i class="dot rojas"></i>Red dwarf</span></label>
+<label class="pick"><input type="radio" name="toolKind" value="fondo" disabled><span><i class="dot fondo"></i>Background</span></label>
 </div>
 <span id="star-total"></span>
 </section>
@@ -271,16 +271,16 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 
 </div>
 <div class="dock">
-<div class="layers" role="group" aria-label="Capas visibles">
-<label><input type="checkbox" name="layer" value="gas" checked disabled>Gas y polvo</label>
-<label><input type="checkbox" name="layer" value="stars" checked disabled>Estrellas</label>
-<label><input type="checkbox" name="layer" value="grain" checked disabled>Grano</label>
+<div class="layers" role="group" aria-label="Visible layers">
+<label><input type="checkbox" name="layer" value="gas" checked disabled>Gas and dust</label>
+<label><input type="checkbox" name="layer" value="stars" checked disabled>Stars</label>
+<label><input type="checkbox" name="layer" value="grain" checked disabled>Grain</label>
 </div>
 <div class="row">
-<button class="btn" type="button" data-action="surprise" disabled>Sorprendeme</button>
-<button class="btn primary" type="button" data-action="save" disabled>Guardar PNG</button>
+<button class="btn" type="button" data-action="surprise" disabled>Surprise me</button>
+<button class="btn primary" type="button" data-action="save" disabled>Save PNG</button>
 </div>
-<button class="btn quiet reset" type="button" data-action="reset" disabled>Volver a la Laguna original</button>
+<button class="btn quiet reset" type="button" data-action="reset" disabled>Back to the original Lagoon</button>
 </div>
 </form>
 </div>
@@ -8552,31 +8552,30 @@ const MODEL = {
   ],
 };
 /**
- * RECONSTRUCCIÓN DE LA REFERENCIA — CANVAS 2D
+ * RECONSTRUCTING THE REFERENCE — CANVAS 2D
  *
- * Esta escena no contiene fotografías, texturas, base64, modelos de IA ni URLs.
- * La referencia se midió fuera del navegador para ajustar una representación
- * geométrica: lóbulos de emisión/absorción gaussianos y fuentes puntuales.
- * Es una reconstrucción ajustada a una foto, no una simulación astrofísica.
+ * This scene contains no photographs, textures, base64, AI models or URLs.
+ * The reference was measured outside the browser to fit a geometric
+ * representation: Gaussian emission/absorption lobes and point sources.
+ * It is a reconstruction fitted to a photo, not an astrophysical simulation.
  *
- * MODEL.gas:   [x, y, sigma, rojo, verde, azul]. Los valores con signo permiten
- *              superponer emisión y restar luz en las regiones de polvo.
+ * MODEL.gas:   [x, y, sigma, red, green, blue]. Signed values let lobes
+ *              add emission and subtract light in the dust regions.
  * MODEL.stars: [x, y, sigma, R, G, B, haloR, haloG, haloB].
- * Un lóbulo se evalúa como color * exp(-(dx² + dy²) / (2 * sigma²)).
- * Las estrellas suman un núcleo y un halo más ancho; las principales tienen
- * difracción analítica. El grano es ruido determinista creado por código.
+ * A lobe evaluates to color * exp(-(dx² + dy²) / (2 * sigma²)).
+ * Stars add a core and a wider halo; the brightest ones also get analytic
+ * diffraction. Grain is deterministic noise generated in code.
  *
- * Las variantes de color (PRESETS) recolorean las capas ya sumadas en render():
- * cambiar de paleta o de tono no recalcula las gaussianas.
+ * Color variants (PRESETS) recolor the finished layers in render():
+ * changing palette or hue never recomputes the Gaussians.
  *
- * Los tipos (planetaria, bipolar, supernova, pilares, reflexión) se generan con
- * recetas de ruido y una semilla: cada semilla es otra nebulosa del mismo tipo.
+ * The other nebula types (planetary, bipolar, supernova, pillars, reflection)
+ * come from noise recipes and a seed: each seed is a new nebula of that type.
  *
- * Las variantes de forma deforman solo la capa de gas ya sumada (warpGas):
- * las estrellas quedan en su lugar.
+ * Shape variants warp only the finished gas layer (warpGas): stars stay put.
  *
- * Editá las opciones iniciales o los parámetros para cambiar la escena.
- * Abrí este archivo directamente en cualquier navegador moderno. No hay build.
+ * Edit the initial options or the parameters to change the scene.
+ * Open this file directly in any modern browser. There is no build step.
  */
 (function () {
   'use strict';
@@ -9009,10 +9008,18 @@ const MODEL = {
         flowX[p]=dx; flowY[p]=dy;
       }
     }
-    // Adds weight × source(sx, sy) into target[o..o+2]. Outside the canvas there is no
-    // gas (clamping to the edge pixel would smear it into streaks).
+    // Folds a coordinate back into [0, max] like a mirror, as many times as needed.
+    function reflect(v, max) {
+      const period=2*max;
+      v=Math.abs(v)%period;
+      return v>max ? period-v : v;
+    }
+    // Adds weight × source(sx, sy) into target[o..o+2]. Samples beyond the frame are
+    // mirrored back inside: leaving them empty cut hard edges into clouds that fill
+    // the frame, and clamping to the edge pixel smeared it into streaks.
     function fetch(target, o, sx, sy, w) {
-      if (sx<0 || sy<0 || sx>width-1 || sy>height-1) return;
+      if (sx<0 || sx>width-1) sx=reflect(sx, width-1);
+      if (sy<0 || sy>height-1) sy=reflect(sy, height-1);
       if (sx>width-1.001) sx=width-1.001;
       if (sy>height-1.001) sy=height-1.001;
       const x0=sx|0, y0=sy|0, fx=sx-x0, fy=sy-y0;
@@ -9129,7 +9136,7 @@ const MODEL = {
 
   // STAR EDITING
   // The page owns the star list; the engine only rasterizes it when it changes.
-  // Laguna stars can be switched off or erased one by one; generated stars come from
+  // Lagoon stars can be switched off or erased one by one; generated stars come from
   // a seed with a count per kind (raising one count never moves the others, because
   // each kind draws from its own sequence); clicks add or erase single stars.
   const LAGOON_STARS = [
@@ -9184,18 +9191,23 @@ const MODEL = {
   }
   // INTERFACE
   // One delegated listener reads every control by name; syncUI() writes the state
-  // back, so reset and "Sorprendeme" only have to change the state objects.
+  // back, so reset and "Surprise me" only have to change the state objects.
   const panel=document.getElementById('panel');
   const busyBadge=document.getElementById('busy'), hint=document.getElementById('hint');
   const captionName=document.getElementById('caption-name'), captionNote=document.getElementById('caption-note');
-  const TYPE_NAMES={ laguna:'Laguna', planetaria:'Planetaria', bipolar:'Bipolar',
-    supernova:'Remanente de supernova', pilares:'Pilares', reflexion:'Reflexión' };
-  const KIND_NAMES={ fondo:'una estrella de fondo', sol:'una estrella tipo Sol', rojas:'una enana roja',
-    azules:'una gigante azul', destellos:'un destello' };
+  const TYPE_NAMES={ laguna:'Lagoon', planetaria:'Planetary', bipolar:'Bipolar',
+    supernova:'Supernova remnant', pilares:'Pillars', reflexion:'Reflection' };
+  const KIND_NAMES={ fondo:'a background star', sol:'a Sun-like star', rojas:'a red dwarf',
+    azules:'a blue giant', destellos:'a spiked star' };
+  // Internal ids stay as they were (the type id feeds the seed hash); files get English names.
+  const SLUGS={ laguna:'lagoon', planetaria:'planetary', pilares:'pillars', reflexion:'reflection',
+    hielo:'ice', fuego:'fire', esmeralda:'emerald', violeta:'violet',
+    remolino:'swirl', inflar:'bulge', turbulencia:'turbulence', espejo:'mirror' };
+  const slug=id=>SLUGS[id]||id;
   const DEFAULT_OPTIONS={...options};
-  // Two tabs: nebula or stars. Plate clicks follow the tab: on "Estrellas" they use
-  // the chosen star tool (adding stars by default), on "Nebulosa" they only move the
-  // cloud when "Mover" is on. `tool` is the effective tool; `starTool` is remembered.
+  // Two tabs: nebula or stars. Plate clicks follow the tab: on "Stars" they use
+  // the chosen star tool (adding stars by default), on "Nebula" they only move the
+  // cloud when "Move" is on. `tool` is the effective tool; `starTool` is remembered.
   const DEFAULT_STAR_TOOL='add';
   let tab='nebula', starTool=DEFAULT_STAR_TOOL, tool='look', toolKind='destellos';
   function setTab(next) {
@@ -9218,7 +9230,7 @@ const MODEL = {
       if (tabButton) tabButton.setAttribute('aria-selected', String(tab===name));
       if (pane) pane.hidden=tab!==name;
     }
-    setText('tab-star-count', currentStars().entries.length.toLocaleString('es'));
+    setText('tab-star-count', currentStars().entries.length.toLocaleString('en'));
     setText('type-current', TYPE_NAMES[options.type]);
     const currentIcon=document.getElementById('type-current-icon');
     const pickedIcon=panel.querySelector('input[name="type"][value="'+options.type+'"] + span svg');
@@ -9226,12 +9238,12 @@ const MODEL = {
     panel.querySelectorAll('input[name="layer"]').forEach(input=>{ input.checked=options[input.value]; });
     const set=(id, value)=>{ const el=document.getElementById(id); if (el) el.value=value; };
     set('hue', options.hue); set('amount', options.amount);
-    setText('hue-value', options.hue ? options.hue+'°' : 'sin girar');
+    setText('hue-value', options.hue ? options.hue+'°' : 'none');
     setText('amount-value', options.amount);
     const lagoonInput=document.getElementById('lagoon-stars');
     if (lagoonInput) lagoonInput.checked=starState.lagoon;
-    for (const kind of STAR_KINDS) { set('count-'+kind, starState.counts[kind]); setText('count-'+kind+'-value', starState.counts[kind].toLocaleString('es')); }
-    setText('star-total', currentStars().entries.length.toLocaleString('es')+' estrellas en la imagen');
+    for (const kind of STAR_KINDS) { set('count-'+kind, starState.counts[kind]); setText('count-'+kind+'-value', starState.counts[kind].toLocaleString('en')); }
+    setText('star-total', currentStars().entries.length.toLocaleString('en')+' stars in the image');
     const generated=options.type!=='laguna';
     panel.classList.toggle('is-generated', generated);
     panel.classList.toggle('shape-off', options.shape==='original');
@@ -9240,7 +9252,7 @@ const MODEL = {
     if (amountInput && ready) amountInput.disabled=options.shape==='original';
     setText('seed-value', options.seed);
     captionName.textContent=TYPE_NAMES[options.type];
-    captionNote.textContent=generated ? 'Variante '+options.seed : 'Reconstrucción de M8';
+    captionNote.textContent=generated ? 'Variant '+options.seed : 'Reconstruction of M8';
     canvas.classList.toggle('placing', tool==='add' || tool==='erase');
     canvas.classList.toggle('moving', tool==='move');
     const moveButton=document.getElementById('move-button'), centerButton=document.getElementById('center-button');
@@ -9248,10 +9260,10 @@ const MODEL = {
     if (centerButton) centerButton.hidden=!options.offsetX && !options.offsetY;
     hint.hidden=tool==='look';
     hint.textContent=tool==='move'
-      ? 'Arrastrá la nebulosa para moverla. Esc para terminar.'
+      ? 'Drag the nebula to move it. Esc to finish.'
       : tool==='add'
-      ? 'Hacé clic en la imagen para agregar '+KIND_NAMES[toolKind]+'. Esc para terminar.'
-      : 'Hacé clic cerca de una estrella para borrarla. Esc para terminar.';
+      ? 'Click the image to add '+KIND_NAMES[toolKind]+'. Esc to finish.'
+      : 'Click near a star to erase it. Esc to finish.';
   }
   function starsChanged() {
     starCache=null; starVersion++;
@@ -9297,7 +9309,7 @@ const MODEL = {
     tab(button) { setTab(button.dataset.tab); },
     move() { tool=tool==='move' ? 'look' : 'move'; syncUI(); },
     center() { options.offsetX=0; options.offsetY=0; syncUI(); redraw(); },
-    // With nothing generated yet, a new field replaces the Laguna stars entirely.
+    // With nothing generated yet, a new field replaces the Lagoon stars entirely.
     starReroll() {
       starState.seed=1+Math.floor(Math.random()*99999);
       if (STAR_KINDS.every(kind=>!starState.counts[kind])) {
@@ -9332,8 +9344,8 @@ const MODEL = {
         if(!blob) return;
         const url=URL.createObjectURL(blob),a=document.createElement('a');
         a.href=url;
-        a.download=['nebulosa',options.type==='laguna'?'':options.type+'-'+options.seed,options.preset,options.hue||'',
-          options.shape==='original'?'':options.shape+'-'+options.amount].filter(Boolean).join('-')+'.png';
+        a.download=['nebula',options.type==='laguna'?'lagoon':slug(options.type)+'-'+options.seed,slug(options.preset),options.hue||'',
+          options.shape==='original'?'':slug(options.shape)+'-'+options.amount].filter(Boolean).join('-')+'.png';
         a.click();
         setTimeout(()=>URL.revokeObjectURL(url),1000);
       },'image/png');
@@ -9350,7 +9362,7 @@ const MODEL = {
   });
 
   // Palette swatches preview each preset: gradient maps show their own stops, hue
-  // presets show the Laguna's reds turned by the same angle.
+  // presets show the Lagoon's reds turned by the same angle.
   panel.querySelectorAll('[data-swatch]').forEach(swatch=>{
     const preset=PRESETS[swatch.dataset.swatch];
     if (preset.gradient) {

@@ -1,107 +1,109 @@
-# Nebulosas
+# Nebulae
 
-Un visor para jugar con nebulosas dibujadas enteramente con código. Parte de una reconstrucción de la nebulosa de la Laguna (M8) y permite generar otros tipos de nebulosa, cambiarles el color y la forma, moverlas y editar el campo de estrellas.
+A playground for nebulae drawn entirely in code. It starts from a reconstruction of the Lagoon Nebula (M8) and lets you generate other kinds of nebulae, recolor and reshape them, move them around, and edit the star field.
 
-Es un único archivo HTML, sin imágenes, sin dependencias y sin paso de build. Todo se calcula en el navegador sobre un `<canvas>`.
+It is a single HTML file with no images, no dependencies and no build step. Everything is computed in the browser on a `<canvas>`.
 
-## Cómo abrirlo
+## Opening it
 
 Online: https://franpiaggio.github.io/nebulosas/
 
-En local, abrí `index.html` con doble clic en cualquier navegador moderno. Tarda uno o dos segundos en calcular la luz la primera vez.
+Locally, double-click `index.html` in any modern browser. The first render takes a second or two.
 
-Si preferís servirlo:
+To serve it instead:
 
 ```sh
 python3 -m http.server 8000
-# y abrí http://localhost:8000
+# then open http://localhost:8000
 ```
 
-## Qué se puede hacer
+## What you can do
 
-El panel de la derecha tiene dos pestañas: **Nebulosa** (tipo, color, forma y posición) y **Estrellas** (campo y edición con clics).
+The panel on the right has two tabs: **Nebula** (type, color, shape and position) and **Stars** (star field and click editing).
 
-**Tipo.** Un desplegable que arranca en la Laguna, la reconstrucción fija de una foto real. Los otros cinco tipos se generan:
+**Type.** A dropdown that starts on the Lagoon, the fixed reconstruction of a real photo. The other five types are generated:
 
-| Tipo | Inspirada en | Rasgos |
+| Type | Inspired by | Features |
 | --- | --- | --- |
-| Planetaria | Helix, Anillo | Cáscara roja grumosa, interior turquesa, nudos oscuros en el borde |
-| Bipolar | Mariposa | Dos lóbulos desiguales con bordes brillantes y una cintura de polvo |
-| Supernova | Velo | Filamentos enredados sobre una cáscara, cortados en arcos |
-| Pilares | Pilares de la Creación | Columnas de polvo con el borde iluminado del lado de la luz |
-| Reflexión | Pléyades | Bruma azul con estrías alrededor de un cúmulo de estrellas calientes |
+| Planetary | Helix, Ring | Clumpy red shell, teal interior, dark knots on the rim |
+| Bipolar | Butterfly | Two uneven lobes with bright edges and a dusty waist |
+| Supernova remnant | Veil | Tangled filaments along a shell, broken into arcs |
+| Pillars | Pillars of Creation | Dust columns lit on the side facing the light |
+| Reflection | Pleiades | Streaked blue haze around a cluster of hot stars |
 
-"Otra variante" genera otra nebulosa del mismo tipo. Cada variante tiene un número y la misma variante siempre da la misma imagen. Los tipos generados se pueden arrastrar a otra posición con "Mover en la imagen".
+"New variant" generates another nebula of the same type. Each variant has a number, and the same variant always gives the same image. Generated types can be dragged to a new position with "Move on the image".
 
-**Color.** Siete paletas (Original, Hubble, Hielo, Fuego, Esmeralda, Violeta, Mono) y un control para girar el tono.
+**Color.** Seven palettes (Original, Hubble, Ice, Fire, Emerald, Violet, Mono) and a hue shift slider.
 
-**Forma.** Deforma el gas sin tocar las estrellas: Remolino, Inflar, Turbulencia y Espejo, con un control de intensidad.
+**Shape.** Warps the gas and leaves the stars alone: Swirl, Bulge, Turbulence and Mirror, with a strength slider.
 
-**Estrellas.**
-- Prender o apagar las estrellas originales de la Laguna.
-- Sumar estrellas generadas por tipo: de fondo, tipo Sol, enanas rojas, gigantes azules y destellos con cruz de difracción.
-- "Nuevo campo de estrellas" reemplaza el campo por uno generado.
-- Editar con clics: al entrar en la pestaña Estrellas el modo Agregar ya está activo, así que un clic en la imagen suma una estrella. Borrar quita la más cercana y Mirar desactiva los clics. Esc sale de cualquier modo. En la pestaña Nebulosa los clics no tocan las estrellas.
+**Stars.**
+- Turn the Lagoon's original stars on or off.
+- Add generated stars by kind: background, Sun-like, red dwarfs, blue giants and spiked stars with diffraction crosses.
+- "New star field" replaces the field with a generated one.
+- Click editing: when you open the Stars tab, Add mode is already on, so a click on the image adds a star. Erase removes the nearest one and View turns clicks off. Esc leaves any mode. On the Nebula tab, clicks never touch the stars.
 
-**Abajo del panel**: prender o apagar las capas (gas, estrellas, grano), "Sorprendeme" para una combinación al azar, "Guardar PNG" y "Volver a la Laguna original".
+**At the bottom of the panel**: toggle the layers (gas, stars, grain), "Surprise me" for a random combination, "Save PNG", and "Back to the original Lagoon".
 
-## Cómo funciona
+## How it works
 
-### La Laguna
+### The Lagoon
 
-No es una foto. La imagen se midió fuera del navegador y se ajustó con funciones matemáticas simples. El objeto `MODEL` al principio del script guarda el resultado:
+It is not a photo. The image was measured outside the browser and fitted with simple mathematical functions. The `MODEL` object at the top of the script holds the result:
 
-- `gas`: 6.500 manchas gaussianas `[x, y, sigma, R, G, B]`. Muchas tienen canales negativos: restan luz para formar el polvo y se compensan entre sí.
-- `stars`: 1.734 estrellas con núcleo y halo.
-- `cutouts`: parches que limpian el gas debajo de las diez estrellas más brillantes.
-- `brightStars`: esas diez estrellas, con su forma medida y sus rayos de difracción.
+- `gas`: 6,500 Gaussian blobs `[x, y, sigma, R, G, B]`. Many have negative channels: they subtract light to form the dust and cancel each other out.
+- `stars`: 1,734 stars, each with a core and a halo.
+- `cutouts`: patches that clean up the gas under the ten brightest stars.
+- `brightStars`: those ten stars, with their measured shape and diffraction spikes.
 
-El script que hizo ese ajuste no forma parte del proyecto.
+The script that did the fitting is not part of this project.
 
-### El motor
+### The engine
 
-`rasterEngine(model)` corre en un Web Worker creado a partir de su propio código. Si el navegador no permite workers, corre en la página. El motor arma capas separadas en `Float32Array`: gas, estrellas y grano. En cada dibujo solo las combina y les aplica la paleta, por eso cambiar un color es instantáneo.
+`rasterEngine(model)` runs in a Web Worker built from its own source. If the browser doesn't allow workers, it runs on the page. The engine builds separate layers in `Float32Array`s: gas, stars and grain. Each render only combines them and applies the palette, which is why color changes are instant.
 
-Los pasos de un dibujo:
+The steps of one render:
 
-1. **Capa de gas**: la de la Laguna, o una generada por la receta del tipo elegido. Se guarda hasta que cambian el tipo, la variante o la posición.
-2. **Forma**: si hay una deformación elegida, el gas se muestrea desde otra posición, píxel por píxel. Se deforma la imagen ya sumada y no las manchas, porque las manchas con signo dejarían de compensarse.
-3. **Color**: una matriz de color o un degradé según el brillo, y una curva suave que evita que los brillos se quemen en blanco.
-4. **Estrellas y grano** se suman encima.
+1. **Gas layer**: the Lagoon's, or one generated by the recipe of the chosen type. It is cached until the type, the variant or the position changes.
+2. **Shape**: if a warp is selected, each pixel samples the gas from somewhere else. The warp works on the summed image rather than on the blobs, because the signed blobs would stop cancelling out. Samples that land outside the frame are mirrored back inside, so warps never show the edge of the image.
+3. **Color**: a color matrix or a gradient keyed to brightness, plus a soft curve that keeps highlights from burning out to white.
+4. **Stars and grain** are added on top.
 
-### Tipos generados
+### Generated types
 
-Cada tipo es una receta en `recipe(type, seed)` que devuelve, para cualquier punto, cuánta luz emite en tres colores (rojo del hidrógeno, turquesa del oxígeno, azul de reflexión) y cuánto polvo hay. Las recetas usan ruido determinista, así que la misma semilla siempre da la misma nebulosa. El motor las evalúa en una grilla a media resolución, las interpola y les suma una textura fina de ruido.
+Each type is a recipe in `recipe(type, seed)` that returns, for any point, how much light it emits in three colors (hydrogen red, oxygen teal, reflection blue) and how much dust there is. The recipes use deterministic noise, so the same seed always gives the same nebula. The engine evaluates them on a half-resolution grid, interpolates, and adds a fine noise texture.
 
-### Estrellas
+### Stars
 
-Todas las estrellas son una lista con el mismo formato: las de la Laguna, las generadas y las agregadas a mano.
-
-```
-[x, y, sigma, R, G, B, sigmaHalo, rHalo, gHalo, bHalo,
- largoRayo, grosorRayo, anguloRayo, rRayo, gRayo, bRayo]
-```
-
-La página arma la lista y el worker la dibuja solo cuando cambia. Las estrellas generadas salen de una secuencia por tipo, así que subir un control agrega estrellas sin mover las que ya estaban.
-
-## Cómo extenderlo
-
-- **Una paleta nueva**: agregala a `PRESETS` con puntos de degradé `[posición, R, G, B]`, `gamma`, `hue` o una matriz `stars`, y sumá su muestra en el panel.
-- **Un tipo de nebulosa nuevo**: agregá una rama en `recipe()` que complete `d[0..3]` (rojo, turquesa, azul, polvo) y un botón con `name="type"` en el panel.
-- **Un tipo de estrella nuevo**: sumalo a `STAR_KINDS` y a `makeStar()`, con su control en el panel.
-
-## Limitaciones conocidas
-
-- La resolución es fija: 1536 × 859.
-- Si se apagan las estrellas de la Laguna, quedan manchitas tenues donde estaban. Son restos de esas estrellas dentro del gas ajustado.
-- La Laguna no se puede mover, porque fuera del cuadro de la foto no hay datos.
-- Algunas deformaciones fuertes estiran restos de estrellas que quedaron en el gas.
-
-## Estructura
+Every star is one entry in a single list, whether it comes from the Lagoon, is generated, or was added by hand:
 
 ```
-index.html                               visor completo (HTML, CSS y JS en un archivo)
-referencia/nebulosa-canvas.original.html  reconstrucción original, sin modificar
+[x, y, sigma, R, G, B, haloSigma, haloR, haloG, haloB,
+ spikeLength, spikeThickness, spikeAngle, spikeR, spikeG, spikeB]
 ```
 
-`referencia/` guarda el archivo tal como llegó. Con todos los controles en su valor inicial, `index.html` produce exactamente la misma imagen, píxel por píxel.
+The page builds the list and the worker only redraws it when it changes. Generated stars come from one sequence per kind, so raising a slider adds stars without moving the ones already there.
+
+## Extending it
+
+- **A new palette**: add it to `PRESETS` with gradient stops `[position, R, G, B]`, `gamma`, `hue` or a `stars` matrix, and add its swatch to the panel.
+- **A new nebula type**: add a branch to `recipe()` that fills `d[0..3]` (red, teal, blue, dust) and a button with `name="type"` in the panel.
+- **A new kind of star**: add it to `STAR_KINDS` and `makeStar()`, with its slider in the panel.
+
+Internal ids (types, palettes, shapes, star kinds) are still the original Spanish words. The type id feeds the seed hash, so renaming it would change every variant. Saved PNG files get English names.
+
+## Known limitations
+
+- The resolution is fixed at 1536 × 859.
+- If you turn off the Lagoon's stars, faint smudges remain where they were. They are leftovers of those stars inside the fitted gas.
+- The Lagoon can't be moved, because there is no data outside the photo's frame.
+- Some strong warps stretch star leftovers that remained in the gas.
+
+## Layout
+
+```
+index.html                                the whole viewer (HTML, CSS and JS in one file)
+referencia/nebulosa-canvas.original.html  the original reconstruction, untouched
+```
+
+`referencia/` keeps the file exactly as it arrived. With every control at its default, `index.html` renders the same image, pixel for pixel.
