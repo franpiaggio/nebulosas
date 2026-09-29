@@ -6,7 +6,9 @@ Es un único archivo HTML, sin imágenes, sin dependencias y sin paso de build. 
 
 ## Cómo abrirlo
 
-Abrí `index.html` con doble clic en cualquier navegador moderno. Tarda uno o dos segundos en calcular la luz la primera vez.
+Online: https://franpiaggio.github.io/nebulosas/
+
+En local, abrí `index.html` con doble clic en cualquier navegador moderno. Tarda uno o dos segundos en calcular la luz la primera vez.
 
 Si preferís servirlo:
 
