@@ -34,8 +34,6 @@ button,input{font:inherit;color:inherit}
 figure{position:relative;margin:0;line-height:0;width:min(100%,calc((100svh - 48px)*1536/859))}
 canvas{display:block;width:100%;height:auto;aspect-ratio:1536/859;background:#100e11;border-radius:3px;box-shadow:0 30px 80px -40px #000}
 canvas.placing{cursor:crosshair}
-canvas.moving{cursor:grab;touch-action:none}
-canvas.moving.dragging{cursor:grabbing}
 #loading{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;line-height:1.4;color:var(--muted);background:#0f0c11;border-radius:3px}
 
 /* The plate caption: the one loud element. */
@@ -43,7 +41,7 @@ canvas.moving.dragging{cursor:grabbing}
 #caption-name{display:block;font-family:var(--serif);font-style:italic;font-size:clamp(26px,3.4vw,46px);font-weight:400;letter-spacing:-.01em;color:#fbeef2}
 #caption-note{display:block;margin-top:6px;font-size:12px;color:#d5c3cc;font-variant-numeric:tabular-nums}
 #busy{position:absolute;top:14px;right:14px;line-height:1;padding:7px 11px;border-radius:99px;background:#140f17cc;color:var(--text);font-size:12px;backdrop-filter:blur(6px)}
-#hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);line-height:1.3;padding:8px 14px;border-radius:99px;background:var(--halpha);color:var(--halpha-ink);font-size:12.5px;font-weight:600;white-space:nowrap;max-width:calc(100% - 28px);overflow:hidden;text-overflow:ellipsis}
+#hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);line-height:1.3;padding:8px 14px;border-radius:99px;background:var(--halpha);color:var(--halpha-ink);font-size:12.5px;font-weight:600;max-width:min(calc(100% - 28px),600px);text-align:center;z-index:1;pointer-events:none}
 
 /* Panel */
 #panel{display:flex;flex-direction:column;min-height:0;background:var(--surface);border-left:1px solid var(--line)}
@@ -77,8 +75,21 @@ canvas.moving.dragging{cursor:grabbing}
 .swatches i{display:block;height:22px;border-radius:5px;background:linear-gradient(90deg,#1b0f15,#7d2536 35%,#d9677a 70%,#f5d0d6)}
 
 .variant{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--raised)}
-.move-row{margin-top:6px;justify-content:flex-start;background:transparent;padding:0}
-#move-button[aria-pressed=true]{background:var(--halpha);border-color:var(--halpha);color:var(--halpha-ink);font-weight:600}
+.transform-panel{margin-top:14px}
+.transform-row{display:flex;gap:6px;align-items:center}
+#panel:not(.is-generated) .transform-panel{display:none}
+#transform-button[aria-pressed=true]{background:var(--halpha);border-color:var(--halpha);color:var(--halpha-ink);font-weight:600}
+
+/* Free transform box, Photoshop style: inside moves, corners scale, outside rotates. */
+#transform-box{position:absolute;inset:0;width:100%;height:100%;overflow:visible;touch-action:none;
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 12a7 7 0 1 1 3 5.7' fill='none' stroke='%23000' stroke-width='4'/%3E%3Cpath d='M5 12a7 7 0 1 1 3 5.7' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cpath d='M2 9l3 4 3-4z' fill='%23fff' stroke='%23000'/%3E%3C/svg%3E") 12 12,alias}
+#tb-frame{fill:#ee8e9c0d;stroke:#fff;stroke-width:1.5;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;cursor:move}
+#tb-stem{stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
+#tb-rotate{fill:var(--halpha);stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.tb-corner{fill:#fff;stroke:#140f17;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.tb-corner[data-corner="0"],.tb-corner[data-corner="2"]{cursor:nwse-resize}
+.tb-corner[data-corner="1"],.tb-corner[data-corner="3"]{cursor:nesw-resize}
+#tb-pivot{fill:none;stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke;pointer-events:none}
 .variant small{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
 #panel:not(.is-generated) .variant{display:none}
 
@@ -177,6 +188,16 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <div class="caption" aria-live="polite"><span id="caption-name">Lagoon</span><span id="caption-note">Reconstruction of M8</span></div>
 <div id="busy" role="status" hidden>Generating…</div>
 <div id="hint" role="status" hidden></div>
+<svg id="transform-box" viewBox="0 0 1536 859" hidden aria-hidden="true">
+<g id="tb">
+<rect id="tb-frame" data-role="move"/>
+<line id="tb-stem"/>
+<circle id="tb-rotate" data-role="rotate"/>
+<rect class="tb-corner" data-role="scale" data-corner="0"/><rect class="tb-corner" data-role="scale" data-corner="1"/>
+<rect class="tb-corner" data-role="scale" data-corner="2"/><rect class="tb-corner" data-role="scale" data-corner="3"/>
+<circle id="tb-pivot"/>
+</g>
+</svg>
 </figure>
 </main>
 
@@ -202,7 +223,11 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 </div>
 </details>
 <div class="variant"><small>Variant <span id="seed-value">1</span></small><button class="btn" type="button" data-action="reroll" disabled>New variant</button></div>
-<div class="variant move-row"><button id="move-button" class="btn" type="button" data-action="move" aria-pressed="false" disabled>Move on the image</button><button id="center-button" class="btn quiet" type="button" data-action="center" disabled>Recenter</button></div>
+<div class="transform-panel">
+<div class="transform-row"><button id="transform-button" class="btn" type="button" data-action="transform" aria-pressed="false" disabled>Transform on the image</button><button id="transform-reset" class="btn quiet" type="button" data-action="resetTransform" disabled>Reset</button></div>
+<div class="slider"><label for="rotation">Rotation</label><output id="rotation-value" for="rotation">0°</output><input id="rotation" name="rotation" type="range" min="-180" max="180" step="1" value="0" disabled></div>
+<div class="slider"><label for="scale">Size</label><output id="scale-value" for="scale">100%</output><input id="scale" name="scale" type="range" min="30" max="300" step="5" value="100" disabled></div>
+</div>
 </section>
 
 <section class="group" aria-labelledby="h-color">
@@ -8581,7 +8606,7 @@ const MODEL = {
   'use strict';
   const canvas = document.getElementById('nebula');
   const context = canvas.getContext('2d', { alpha: false });
-  const options = { gas: true, stars: true, grain: true, preset: 'original', hue: 0, shape: 'original', amount: 60, type: 'laguna', seed: 1, offsetX: 0, offsetY: 0, preview: false };
+  const options = { gas: true, stars: true, grain: true, preset: 'original', hue: 0, shape: 'original', amount: 60, type: 'laguna', seed: 1, offsetX: 0, offsetY: 0, rotation: 0, scale: 1, preview: false };
   let worker, cache, ready = false, sequence = 0, busy = false, pending = false;
   const START = performance.now();
 
@@ -8805,7 +8830,7 @@ const MODEL = {
         // Ring or Helix: a clumpy H-alpha shell, O-III filling the cavity,
         // a faint outer shell and dark cometary knots on the inner rim.
         const R=150+70*r(), e=.72+.22*r(), w=R*(.15+.07*r());
-        return { cx, cy, detail:.25, stars:[[cx,cy,1.5,[340,350,380],6]],
+        return { cx, cy, extent:[R*1.8,R*1.8], detail:.25, stars:[[cx,cy,1.5,[340,350,380],6]],
           at(x, y, d) {
             let dx=x-cx, dy=y-cy;
             dx+=fbm(x/170,y/170,s1,3)*R*.14; dy+=fbm(x/170,y/170,s2,3)*R*.14;
@@ -8823,7 +8848,7 @@ const MODEL = {
         // Butterfly: two limb-brightened lobes of unequal length, a hot O-III core
         // and a dusty torus pinching the waist.
         const L=250+100*r(), W=L*(.3+.12*r()), asym=.7+.3*r();
-        return { cx, cy, detail:.3, stars:[[cx,cy,1.2,[300,300,330],0]],
+        return { cx, cy, extent:[L*1.1,L*1.1], detail:.3, stars:[[cx,cy,1.2,[300,300,330],0]],
           at(x, y, d) {
             let dx=x-cx, dy=y-cy;
             dx+=fbm(x/150,y/150,s1,3)*16; dy+=fbm(x/150,y/150,s2,3)*16;
@@ -8847,7 +8872,7 @@ const MODEL = {
         // Veil-like remnant: tangled filaments along an expanding shell, H-alpha
         // outside and O-III slightly inside, broken into arcs.
         const R=290+90*r(), e=.82+.16*r();
-        return { cx, cy, detail:.15, stars:[],
+        return { cx, cy, extent:[R*1.15,R*1.15], detail:.15, stars:[],
           at(x, y, d) {
             let dx=x-cx, dy=y-cy;
             dx+=fbm(x/220,y/220,s1,3)*R*.07; dy+=fbm(x/220,y/220,s2,3)*R*.07;
@@ -8875,7 +8900,7 @@ const MODEL = {
           columns.push({bx, by, vx, vy, len2:len*len, nx:-vy/len, ny:vx/len,
             wb:55+45*r(), wt:18+16*r(), bend:(r()-.5)*90, salt:salt()});
         }
-        return { cx:glowX, cy:glowY, detail:.45, stars:[],
+        return { cx:glowX, cy:glowY, extent:[width*.42,height*.5], detail:.45, stars:[],
           at(x, y, d) {
             const glow=Math.exp(-Math.hypot(x-glowX,y-glowY)/560)*Math.max(0,.55+.9*fbm(x/230,y/230,s1,5));
             let ha=glow*.8, oiii=glow*.6*Math.max(0,.5+1.2*fbm(x/320,y/320,s2,4)), dust=0, rim=0;
@@ -8904,7 +8929,7 @@ const MODEL = {
         members.push({x:sx, y:sy, amp, rad:60+60*r()});
         stars.push([sx, sy, 2+1.2*amp, [300*amp+60, 320*amp+60, 380*amp+60], 5+4*amp]);
       }
-      return { cx, cy, detail:.2, stars,
+      return { cx, cy, extent:[330,260], detail:.2, stars,
         at(x, y, d) {
           let haze=0;
           for (const m of members) haze+=m.amp*Math.exp(-Math.hypot(x-m.x,y-m.y)/m.rad);
@@ -8924,15 +8949,20 @@ const MODEL = {
       if (spike) spikes(target, x, y, spike, .9, .22, color[0]*.3, color[1]*.3, color[2]*.3);
     }
 
-    // The whole generated cloud can be moved: the recipe is sampled at (x-ox, y-oy).
-    function buildLayer(type, seed, ox, oy) {
+    // FREE TRANSFORM
+    // A generated cloud can be moved, rotated and scaled around its own center C:
+    //   screen p = C + offset + R(r)·s·(q - C), with q in recipe space.
+    // Building inverts that per sample, so the result is exact at any transform.
+    function buildLayer(type, seed, t) {
       const rec=recipe(type, seed);
+      const pivotX=rec.cx, pivotY=rec.cy, cos=Math.cos(t.r), sin=Math.sin(t.r), inv=1/t.s;
       // Densities and texture are evaluated on a half-resolution grid and interpolated.
       // Channels: H-alpha, O-III, reflection, dust, texture.
       const step=2, gw=Math.ceil(width/step)+1, gh=Math.ceil(height/step)+1, texSalt=seed*7919+13;
       const grid=new Float32Array(gw*gh*5), d=[0,0,0,0];
       for (let gy=0;gy<gh;gy++) for (let gx=0;gx<gw;gx++) {
-        const x=gx*step-ox, y=gy*step-oy, o=(gy*gw+gx)*5;
+        const dx=gx*step-pivotX-t.x, dy=gy*step-pivotY-t.y, o=(gy*gw+gx)*5;
+        const x=pivotX+(dx*cos+dy*sin)*inv, y=pivotY+(dy*cos-dx*sin)*inv;
         rec.at(x, y, d);
         grid[o]=d[0]; grid[o+1]=d[1]; grid[o+2]=d[2]; grid[o+3]=d[3];
         grid[o+4]=fbm(x/24,y/24,texSalt,4)*1.6+fbm(x/7,y/7,texSalt+1,2)*.5;
@@ -8959,33 +8989,46 @@ const MODEL = {
       let extras=null;
       if (rec.stars.length) {
         extras=new Float32Array(count*3);
-        for (const [x,y,size,color,spike] of rec.stars) addStar(extras, x+ox, y+oy, size, color, spike);
+        for (const [x,y,size,color,spike] of rec.stars) {
+          const qx=x-pivotX, qy=y-pivotY;
+          addStar(extras, pivotX+t.x+(qx*cos-qy*sin)*t.s, pivotY+t.y+(qx*sin+qy*cos)*t.s,
+            size*t.s, color, spike*t.s);
+        }
       }
-      return {gas:out, extras, ...analyze(out)};
+      return {gas:out, extras, ...analyze(out), pivotX, pivotY, hw:rec.extent[0], hh:rec.extent[1]};
     }
-    // Drag preview: slide the last full build by whole pixels instead of rebuilding.
-    // Whatever was outside the frame shows up empty until the real build on release.
-    function shiftLayer(src, dx, dy) {
-      const move=buffer=>{
+    // Drag preview: resample the last full build under the new transform instead of
+    // rebuilding. What was outside the frame shows up empty until the real build.
+    function transformLayer(src, t0, t1) {
+      const k=t0.s/t1.s, a=t0.r-t1.r, cos=Math.cos(a)*k, sin=Math.sin(a)*k;
+      const px=src.pivotX, py=src.pivotY;
+      const resample=buffer=>{
         if (!buffer) return null;
         const out=new Float32Array(count*3);
-        if (Math.abs(dx)>=width || Math.abs(dy)>=height) return out;
-        for (let y=Math.max(0,dy);y<Math.min(height,height+dy);y++) {
-          const from=((y-dy)*width+Math.max(0,-dx))*3, to=(y*width+Math.max(0,dx))*3;
-          out.set(buffer.subarray(from, from+(width-Math.abs(dx))*3), to);
+        for (let y=0,p=0;y<height;y++) for (let x=0;x<width;x++,p++) {
+          const dx=x-px-t1.x, dy=y-py-t1.y;
+          const sx=px+t0.x+dx*cos-dy*sin, sy=py+t0.y+dx*sin+dy*cos;
+          if (sx<0 || sy<0 || sx>=width-1 || sy>=height-1) continue;
+          const x0=sx|0, y0=sy|0, fx=sx-x0, fy=sy-y0, i=(y0*width+x0)*3, o=p*3;
+          const wa=(1-fx)*(1-fy), wb=fx*(1-fy), wc=(1-fx)*fy, wd=fx*fy, below=i+width*3;
+          for (let c=0;c<3;c++) out[o+c]=buffer[i+c]*wa+buffer[i+3+c]*wb+buffer[below+c]*wc+buffer[below+3+c]*wd;
         }
         return out;
       };
-      return {...src, gas:move(src.gas), extras:move(src.extras), centerX:src.centerX+dx, centerY:src.centerY+dy};
+      // Carry the brightness-weighted center along so shape warps stay anchored.
+      const b=t1.r-t0.r, cb=Math.cos(b)/k, sb=Math.sin(b)/k;
+      const cx=src.centerX-px-t0.x, cy=src.centerY-py-t0.y;
+      return {...src, gas:resample(src.gas), extras:resample(src.extras),
+        centerX:px+t1.x+cx*cb-cy*sb, centerY:py+t1.y+cx*sb+cy*cb};
     }
     let built=null;
-    function layerFor(type, seed, ox=0, oy=0, preview=false) {
+    function layerFor(type, seed, t, preview=false) {
       if (!type || type==='laguna') { layer=lagoon; layerKey='laguna'; return layer; }
-      ox=Math.round(ox); oy=Math.round(oy);
-      const base=type+':'+seed, key=base+'@'+ox+','+oy+(preview ? '~' : '');
+      t={x:Math.round(t.x), y:Math.round(t.y), r:Math.round(t.r*1000)/1000, s:Math.round(t.s*1000)/1000};
+      const base=type+':'+seed, key=base+'@'+t.x+','+t.y+','+t.r+','+t.s+(preview ? '~' : '');
       if (key===layerKey) return layer;
-      if (preview && built && built.base===base) layer=shiftLayer(built, ox-built.ox, oy-built.oy);
-      else layer=built={...buildLayer(type, seed, ox, oy), base, ox, oy};
+      if (preview && built && built.base===base) layer=transformLayer(built, built.t, t);
+      else layer=built={...buildLayer(type, seed, t), base, t};
       layerKey=key;
       return layer;
     }
@@ -9065,7 +9108,10 @@ const MODEL = {
       const {sky:m, stars:s, table, monoGrain}=options.look;
       const toned=options.look.tone, k=options.grain ? 1 : 0;
       const [b0,b1,b2]=base;
-      const current=layerFor(options.type, options.seed, options.offsetX, options.offsetY, options.preview);
+      const current=layerFor(options.type, options.seed,
+        {x:options.offsetX, y:options.offsetY, r:options.rotation*Math.PI/180, s:options.scale}, options.preview);
+      // The page draws the transform box from this: pivot and half-size in recipe pixels.
+      render.info=current===lagoon ? null : {cx:current.pivotX, cy:current.pivotY, hw:current.hw, hh:current.hh};
       const {skyLow, skyRange, extras}=current;
       if (options.starList) starField=rasterStars(options.starList);
       const cloud=options.gas ? warpGas(current, options.shape, options.amount/100) : null;
@@ -9100,9 +9146,10 @@ const MODEL = {
   // so dragging a slider never queues a backlog of frames. The "working" badge only
   // appears when a render takes long enough to notice (new nebula types, warps).
   let busyTimer=0;
-  function receive(pixels, id) {
+  let layerInfo=null;
+  function receive(pixels, id, info) {
     busy=false;
-    if (id === sequence) paint(pixels);
+    if (id === sequence) { paint(pixels); layerInfo=info||null; drawBox(); }
     if (pending) { pending=false; redraw(); }
     else { clearTimeout(busyTimer); busyBadge.hidden=true; }
   }
@@ -9125,7 +9172,7 @@ const MODEL = {
     const id=++sequence, payload={...options, look:look()};
     if (sentVersion!==starVersion) { payload.starList=currentStars().entries; sentVersion=starVersion; }
     if (worker) { busy=true; worker.postMessage({options:payload,id}); }
-    else receive(cache(payload),id);
+    else { const pixels=cache(payload); receive(pixels,id,cache.info); }
   }
   function fallback() {
     if (worker) {worker.terminate();worker=null;}
@@ -9254,16 +9301,19 @@ const MODEL = {
     captionName.textContent=TYPE_NAMES[options.type];
     captionNote.textContent=generated ? 'Variant '+options.seed : 'Reconstruction of M8';
     canvas.classList.toggle('placing', tool==='add' || tool==='erase');
-    canvas.classList.toggle('moving', tool==='move');
-    const moveButton=document.getElementById('move-button'), centerButton=document.getElementById('center-button');
-    if (moveButton) moveButton.setAttribute('aria-pressed', String(tool==='move'));
-    if (centerButton) centerButton.hidden=!options.offsetX && !options.offsetY;
+    const transformButton=document.getElementById('transform-button'), transformReset=document.getElementById('transform-reset');
+    if (transformButton) transformButton.setAttribute('aria-pressed', String(tool==='transform'));
+    if (transformReset) transformReset.hidden=!options.offsetX && !options.offsetY && !options.rotation && options.scale===1;
+    set('rotation', options.rotation); set('scale', Math.round(options.scale*100));
+    setText('rotation-value', Math.round(options.rotation)+'°');
+    setText('scale-value', Math.round(options.scale*100)+'%');
     hint.hidden=tool==='look';
-    hint.textContent=tool==='move'
-      ? 'Drag the nebula to move it. Esc to finish.'
+    hint.textContent=tool==='transform'
+      ? 'Drag inside the box to move, a corner to resize, outside to rotate (Shift snaps to 15°). Enter to finish.'
       : tool==='add'
       ? 'Click the image to add '+KIND_NAMES[toolKind]+'. Esc to finish.'
       : 'Click near a star to erase it. Esc to finish.';
+    if (typeof drawBox==='function') drawBox();
   }
   function starsChanged() {
     starCache=null; starVersion++;
@@ -9275,18 +9325,24 @@ const MODEL = {
     const t=event.target;
     if (!ready || !t.name) return;
     const isRange=t.type==='range';
+    // Rotation and size preview while dragging; releasing builds the exact cloud.
+    if (isRange && event.type==='change' && (t.name==='rotation' || t.name==='scale')) {
+      options.preview=false; redraw(); return;
+    }
     // Ranges react while dragging (input); everything else on change.
     if ((event.type==='input')!==isRange) return;
     switch (t.name) {
       case 'type':
         options.type=t.value;
-        if (tool==='move' && t.value==='laguna') tool='look';
+        if (tool==='transform' && t.value==='laguna') tool='look';
         { const picker=document.getElementById('type-picker'); if (picker) picker.open=false; }
         break;
       case 'preset': options.preset=t.value; break;
       case 'hue': options.hue=Number(t.value); break;
       case 'shape': options.shape=t.value; break;
       case 'amount': options.amount=Number(t.value); break;
+      case 'rotation': options.rotation=Number(t.value); options.preview=true; break;
+      case 'scale': options.scale=Number(t.value)/100; options.preview=true; break;
       case 'layer': options[t.value]=t.checked; break;
       case 'lagoonStars': starState.lagoon=t.checked; return starsChanged();
       case 'count': starState.counts[t.dataset.kind]=Number(t.value); return starsChanged();
@@ -9307,8 +9363,8 @@ const MODEL = {
   const actions={
     reroll() { options.seed=1+Math.floor(Math.random()*9999); syncUI(); redraw(); },
     tab(button) { setTab(button.dataset.tab); },
-    move() { tool=tool==='move' ? 'look' : 'move'; syncUI(); },
-    center() { options.offsetX=0; options.offsetY=0; syncUI(); redraw(); },
+    transform() { tool=tool==='transform' ? 'look' : 'transform'; syncUI(); },
+    resetTransform() { Object.assign(options, {offsetX:0, offsetY:0, rotation:0, scale:1}); syncUI(); redraw(); },
     // With nothing generated yet, a new field replaces the Lagoon stars entirely.
     starReroll() {
       starState.seed=1+Math.floor(Math.random()*99999);
@@ -9327,8 +9383,8 @@ const MODEL = {
       options.hue=Math.random()<.25 ? Math.floor(Math.random()*360) : 0;
       options.shape=Math.random()<.5 ? 'original' : random(['remolino','inflar','turbulencia','espejo']);
       options.amount=30+Math.floor(Math.random()*50);
-      options.offsetX=0; options.offsetY=0;
-      if (tool==='move' && options.type==='laguna') tool='look';
+      Object.assign(options, {offsetX:0, offsetY:0, rotation:0, scale:1});
+      if (tool==='transform' && options.type==='laguna') tool='look';
       syncUI(); redraw();
     },
     reset() {
@@ -9356,9 +9412,9 @@ const MODEL = {
     if (button && ready && actions[button.dataset.action]) actions[button.dataset.action](button);
   });
   document.addEventListener('keydown', event=>{
+    if (tool==='transform' && (event.key==='Escape' || event.key==='Enter')) { tool='look'; syncUI(); return; }
     if (event.key!=='Escape' || tool==='look') return;
-    if (tool!=='move') starTool='look';
-    tool='look'; syncUI();
+    starTool='look'; tool='look'; syncUI();
   });
 
   // Palette swatches preview each preset: gradient maps show their own stops, hue
@@ -9372,33 +9428,71 @@ const MODEL = {
     }
   });
 
-  // Dragging the cloud in "move" mode. Pointer events cover mouse, pen and touch.
+  // FREE TRANSFORM BOX
+  // Drawn in image coordinates over the canvas. The box follows the options at once,
+  // while the worker catches up with a quick preview and then the exact rebuild.
+  const box=document.getElementById('transform-box'), boxGroup=document.getElementById('tb');
+  const imagePoint=event=>{
+    const rect=canvas.getBoundingClientRect();
+    return [(event.clientX-rect.left)*MODEL.width/rect.width, (event.clientY-rect.top)*MODEL.height/rect.height];
+  };
+  function drawBox() {
+    const on=tool==='transform' && !!layerInfo && options.type!=='laguna';
+    // SVG elements have no `hidden` property; toggle the attribute itself.
+    if (!on) { box.setAttribute('hidden', ''); return; }
+    box.removeAttribute('hidden');
+    const rect=canvas.getBoundingClientRect(), px=rect.width ? MODEL.width/rect.width : 1;
+    const w=layerInfo.hw*options.scale, h=layerInfo.hh*options.scale, k=10*px, stem=h+30*px;
+    const attr=(el, values)=>{ for (const name in values) el.setAttribute(name, values[name]); };
+    attr(boxGroup, {transform:'translate('+(layerInfo.cx+options.offsetX)+' '+(layerInfo.cy+options.offsetY)+') rotate('+options.rotation+')'});
+    attr(document.getElementById('tb-frame'), {x:-w, y:-h, width:2*w, height:2*h});
+    attr(document.getElementById('tb-stem'), {x1:0, y1:-h, x2:0, y2:-stem});
+    attr(document.getElementById('tb-rotate'), {cx:0, cy:-stem, r:6*px});
+    attr(document.getElementById('tb-pivot'), {cx:0, cy:0, r:4*px});
+    box.querySelectorAll('.tb-corner').forEach(corner=>{
+      const i=Number(corner.dataset.corner), cx=i===0||i===3 ? -w : w, cy=i<2 ? -h : h;
+      attr(corner, {x:cx-k/2, y:cy-k/2, width:k, height:k});
+    });
+  }
   let drag=null;
-  const toImage=event=>{ const box=canvas.getBoundingClientRect(); return MODEL.width/box.width; };
-  canvas.addEventListener('pointerdown', event=>{
-    if (!ready || tool!=='move') return;
-    drag={x:event.clientX, y:event.clientY, ox:options.offsetX, oy:options.offsetY, scale:toImage(event)};
-    canvas.setPointerCapture(event.pointerId);
-    canvas.classList.add('dragging');
+  box.addEventListener('pointerdown', event=>{
+    if (!ready || !layerInfo) return;
+    const role=(event.target.dataset && event.target.dataset.role) || 'rotate';
+    const center=[layerInfo.cx+options.offsetX, layerInfo.cy+options.offsetY];
+    drag={role, start:imagePoint(event), center, offsetX:options.offsetX, offsetY:options.offsetY,
+      rotation:options.rotation, scale:options.scale};
+    box.setPointerCapture(event.pointerId);
+    event.preventDefault();
   });
-  canvas.addEventListener('pointermove', event=>{
+  box.addEventListener('pointermove', event=>{
     if (!drag) return;
-    options.offsetX=Math.round(drag.ox+(event.clientX-drag.x)*drag.scale);
-    options.offsetY=Math.round(drag.oy+(event.clientY-drag.y)*drag.scale);
+    const [x,y]=imagePoint(event), [x0,y0]=drag.start, [cx,cy]=drag.center;
+    if (drag.role==='move') {
+      options.offsetX=Math.round(drag.offsetX+x-x0);
+      options.offsetY=Math.round(drag.offsetY+y-y0);
+    } else if (drag.role==='scale') {
+      const ratio=Math.hypot(x-cx,y-cy)/Math.max(1,Math.hypot(x0-cx,y0-cy));
+      options.scale=Math.min(3, Math.max(.3, Math.round(drag.scale*ratio*100)/100));
+    } else {
+      let angle=drag.rotation+(Math.atan2(y-cy,x-cx)-Math.atan2(y0-cy,x0-cx))*180/Math.PI;
+      if (event.shiftKey) angle=Math.round(angle/15)*15;
+      angle=((angle+540)%360)-180;
+      options.rotation=Math.round(angle);
+    }
     options.preview=true;
-    redraw();
+    syncUI(); redraw();
   });
   const endDrag=()=>{
     if (!drag) return;
     drag=null; options.preview=false;
-    canvas.classList.remove('dragging');
     syncUI(); redraw();
   };
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
+  box.addEventListener('pointerup', endDrag);
+  box.addEventListener('pointercancel', endDrag);
+  window.addEventListener('resize', ()=>drawBox());
 
   canvas.addEventListener('click', event=>{
-    if (!ready || tool==='look' || tool==='move') return;
+    if (!ready || tool==='look' || tool==='transform') return;
     const box=canvas.getBoundingClientRect();
     const x=(event.clientX-box.left)*MODEL.width/box.width, y=(event.clientY-box.top)*MODEL.height/box.height;
     if (tool==='erase') {
@@ -9424,11 +9518,11 @@ const MODEL = {
   try {
     const source='const engine = '+rasterEngine.toString()+'; let render; '+
       'onmessage = (event) => {const d=event.data; if(d.model) render=engine(d.model); '+
-      'const pixels=render(d.options); postMessage({pixels,id:d.id},[pixels.buffer]);};';
+      'const pixels=render(d.options); postMessage({pixels,info:render.info,id:d.id},[pixels.buffer]);};';
     const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
     worker=new Worker(url);
     URL.revokeObjectURL(url);
-    worker.onmessage=e=>receive(e.data.pixels,e.data.id);
+    worker.onmessage=e=>receive(e.data.pixels,e.data.id,e.data.info);
     worker.onerror=fallback;
     busy=true; sentVersion=starVersion;
     worker.postMessage({model:MODEL,options:{...options, look:look(), starList:currentStars().entries},id:++sequence});
