@@ -34,6 +34,13 @@ button,input{font:inherit;color:inherit}
 figure{position:relative;margin:0;line-height:0;width:min(100%,calc((100svh - 48px)*1536/859))}
 canvas{display:block;width:100%;height:auto;aspect-ratio:1536/859;background:#100e11;border-radius:3px;box-shadow:0 30px 80px -40px #000}
 canvas.placing{cursor:crosshair}
+canvas.painting{cursor:none;touch-action:none}
+#paint-preview{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;background:none;box-shadow:none;aspect-ratio:auto}
+#brush-ring{position:absolute;border:1.5px solid #fff;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);mix-blend-mode:difference}
+.dot.paint-ha{color:#ff5f73;background:#ff5f73}
+.dot.paint-o3{color:#3fd0d4;background:#3fd0d4}
+.dot.paint-blue{color:#7d98ff;background:#7d98ff}
+.dot.paint-dust{color:transparent;background:#3a2a22;box-shadow:inset 0 0 0 1.5px #8a6f60}
 #loading{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;line-height:1.4;color:var(--muted);background:#0f0c11;border-radius:3px}
 
 /* The plate caption: the one loud element. */
@@ -94,7 +101,7 @@ canvas.placing{cursor:crosshair}
 #panel:not(.is-generated) .variant{display:none}
 
 /* Tabs: nebula or stars, never both at once. */
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:18px 22px 4px;padding:3px;border-radius:12px;background:var(--raised)}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:18px 22px 4px;padding:3px;border-radius:12px;background:var(--raised)}
 .tabs button{border:0;background:transparent;color:var(--muted);padding:9px 8px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer}
 .tabs button:hover{color:var(--text)}
 .tabs button[aria-selected=true]{background:#3a2a38;color:var(--text)}
@@ -188,6 +195,8 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <div class="caption" aria-live="polite"><span id="caption-name">Lagoon</span><span id="caption-note">Reconstruction of M8</span></div>
 <div id="busy" role="status" hidden>Generating…</div>
 <div id="hint" role="status" hidden></div>
+<canvas id="paint-preview" width="1536" height="859" aria-hidden="true"></canvas>
+<div id="brush-ring" hidden></div>
 <svg id="transform-box" viewBox="0 0 1536 859" hidden aria-hidden="true">
 <g id="tb">
 <rect id="tb-frame" data-role="move"/>
@@ -205,6 +214,7 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <div class="tabs" role="tablist" aria-label="What to edit">
 <button id="tab-nebula" type="button" role="tab" aria-selected="true" aria-controls="pane-nebula" data-action="tab" data-tab="nebula" disabled>Nebula</button>
 <button id="tab-stars" type="button" role="tab" aria-selected="false" aria-controls="pane-stars" data-action="tab" data-tab="stars" disabled>Stars<span id="tab-star-count"></span></button>
+<button id="tab-paint" type="button" role="tab" aria-selected="false" aria-controls="pane-paint" data-action="tab" data-tab="paint" disabled>Paint</button>
 </div>
 <div class="scroll">
 
@@ -291,6 +301,25 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <label class="pick"><input type="radio" name="toolKind" value="fondo" disabled><span><i class="dot fondo"></i>Background</span></label>
 </div>
 <span id="star-total"></span>
+</section>
+</div>
+
+<div id="pane-paint" role="tabpanel" aria-labelledby="tab-paint" hidden>
+<section class="group" aria-labelledby="h-brush">
+<h2 id="h-brush">Brush</h2>
+<div class="chips" role="radiogroup" aria-labelledby="h-brush">
+<label class="pick"><input type="radio" name="brush" value="ha" checked disabled><span><i class="dot paint-ha"></i>Hydrogen</span></label>
+<label class="pick"><input type="radio" name="brush" value="o3" disabled><span><i class="dot paint-o3"></i>Oxygen</span></label>
+<label class="pick"><input type="radio" name="brush" value="blue" disabled><span><i class="dot paint-blue"></i>Reflection</span></label>
+<label class="pick"><input type="radio" name="brush" value="dust" disabled><span><i class="dot paint-dust"></i>Dust</span></label>
+<label class="pick"><input type="radio" name="brush" value="erase" disabled><span><svg viewBox="0 0 24 24"><path d="M4 16l8-8 6 6-5 5H8zM9 19h11"/></svg>Eraser</span></label>
+</div>
+<div class="slider"><label for="brush-size">Size</label><output id="brush-size-value" for="brush-size">60</output><input id="brush-size" name="brushSize" type="range" min="10" max="240" step="2" value="60" disabled></div>
+<div class="slider"><label for="brush-flow">Strength</label><output id="brush-flow-value" for="brush-flow">40%</output><input id="brush-flow" name="brushFlow" type="range" min="5" max="100" step="5" value="40" disabled></div>
+</section>
+<section class="group" aria-labelledby="h-painting">
+<h2 id="h-painting">Painting</h2>
+<div class="row"><button class="btn" type="button" data-action="paintUndo" disabled>Undo stroke</button><button class="btn quiet" type="button" data-action="paintClear" disabled>Clear painting</button></div>
 </section>
 </div>
 
@@ -9100,6 +9129,71 @@ const MODEL = {
       return warped=out;
     }
 
+    // PAINTING
+    // The page sends a half-resolution mask with four channels (hydrogen, oxygen,
+    // reflection, dust). Processing turns flat strokes into gas: the mask is read
+    // through a noise warp so edges turn wispy, blurred at two radii for a core and a
+    // glow, broken up by texture and threaded with thin filaments. Emission is added
+    // to the sky; dust darkens whatever is underneath, the Lagoon included.
+    let paintLight=null, paintDust=null;
+    function blurGrid(src, w, h, radius) {
+      const a=Float32Array.from(src), b=new Float32Array(w*h), span=2*radius+1;
+      for (let pass=0;pass<3;pass++) {
+        for (let y=0;y<h;y++) {
+          const row=y*w; let sum=0;
+          for (let x=-radius;x<=radius;x++) sum+=a[row+Math.max(0,Math.min(w-1,x))];
+          for (let x=0;x<w;x++) {
+            b[row+x]=sum/span;
+            sum+=a[row+Math.min(w-1,x+radius+1)]-a[row+Math.max(0,x-radius)];
+          }
+        }
+        for (let x=0;x<w;x++) {
+          let sum=0;
+          for (let y=-radius;y<=radius;y++) sum+=b[Math.max(0,Math.min(h-1,y))*w+x];
+          for (let y=0;y<h;y++) {
+            a[y*w+x]=sum/span;
+            sum+=b[Math.min(h-1,y+radius+1)*w+x]-b[Math.max(0,y-radius)*w+x];
+          }
+        }
+      }
+      return a;
+    }
+    function processPaint(mask, w, h) {
+      const n=w*h, channels=[0,1,2,3].map(()=>new Float32Array(n));
+      let any=false;
+      for (let y=0,p=0;y<h;y++) for (let x=0;x<w;x++,p++) {
+        // Two scales of warp: broad billows plus ragged edges.
+        const sx=Math.max(0,Math.min(w-1.001, x+16*fbm(x/48,y/48,901,3)+5*fbm(x/12,y/12,906,2)));
+        const sy=Math.max(0,Math.min(h-1.001, y+16*fbm(x/48,y/48,902,3)+5*fbm(x/12,y/12,907,2)));
+        const x0=sx|0, y0=sy|0, fx=sx-x0, fy=sy-y0, i=(y0*w+x0)*4, below=i+w*4;
+        for (let c=0;c<4;c++) {
+          const v=(mask[i+c]*(1-fx)+mask[i+4+c]*fx)*(1-fy)+(mask[below+c]*(1-fx)+mask[below+4+c]*fx)*fy;
+          channels[c][p]=v; if (v>0) any=true;
+        }
+      }
+      if (!any) { paintLight=null; paintDust=null; return; }
+      const core=channels.map(ch=>blurGrid(ch,w,h,2)), glow=channels.map(ch=>blurGrid(ch,w,h,16));
+      const grid=new Float32Array(n*4);
+      for (let y=0,p=0;y<h;y++) for (let x=0;x<w;x++,p++) {
+        const texture=.3+1.3*Math.max(0,fbm(x/26,y/26,903,4)+.3);
+        const filament=Math.pow(1-Math.abs(fbm(x/18,y/18,904,4)),8);
+        for (let c=0;c<3;c++) grid[p*4+c]=((core[c][p]*.55+glow[c][p]*.6)*texture+filament*glow[c][p]*.7)*.75;
+        grid[p*4+3]=Math.min(1,(core[3][p]*.9+glow[3][p]*.3)*(.7+.6*fbm(x/16,y/16,905,3)));
+      }
+      const HA=[230,52,74], O3=[52,178,190], BLUE=[80,125,255];
+      paintLight=new Float32Array(count*3); paintDust=new Float32Array(count);
+      const kx=(w-1)/(width-1), ky=(h-1)/(height-1), cell=[0,0,0,0];
+      for (let y=0,p=0;y<height;y++) {
+        const gy=Math.min(h-1.001,y*ky), y0=gy|0, fy=gy-y0;
+        for (let x=0;x<width;x++,p++) {
+          const gx=Math.min(w-1.001,x*kx), x0=gx|0, fx=gx-x0, o=(y0*w+x0)*4, below=o+w*4;
+          for (let c=0;c<4;c++) cell[c]=(grid[o+c]*(1-fx)+grid[o+4+c]*fx)*(1-fy)+(grid[below+c]*(1-fx)+grid[below+4+c]*fx)*fy;
+          for (let c=0;c<3;c++) paintLight[p*3+c]=cell[0]*HA[c]+cell[1]*O3[c]+cell[2]*BLUE[c];
+          paintDust[p]=cell[3];
+        }
+      }
+    }
+
     // Highlights roll off smoothly instead of clipping when a variant pushes past 255.
     function tone(v) { return v<210 ? v : 210+45*(1-Math.exp((210-v)/45)); }
 
@@ -9114,10 +9208,13 @@ const MODEL = {
       render.info=current===lagoon ? null : {cx:current.pivotX, cy:current.pivotY, hw:current.hw, hh:current.hh};
       const {skyLow, skyRange, extras}=current;
       if (options.starList) starField=rasterStars(options.starList);
+      if (options.paintChanged) { if (options.paint) processPaint(options.paint.mask, options.paint.w, options.paint.h); else paintLight=paintDust=null; }
       const cloud=options.gas ? warpGas(current, options.shape, options.amount/100) : null;
       for (let p=0,i=0;p<count;p++,i+=3) {
         let r=b0, g=b1, b=b2;
         if (cloud) { r+=cloud[i]; g+=cloud[i+1]; b+=cloud[i+2]; }
+        if (paintDust) { const shade=1-paintDust[p]*.85; r*=shade; g*=shade; b*=shade; }
+        if (paintLight) { r+=paintLight[i]; g+=paintLight[i+1]; b+=paintLight[i+2]; }
         if (table) {
           const t=((r+g+b)/3-skyLow)/skyRange;
           const n=(t<=0 ? 0 : t>=1 ? 1023 : Math.round(t*1023))*3;
@@ -9150,6 +9247,7 @@ const MODEL = {
   function receive(pixels, id, info) {
     busy=false;
     if (id === sequence) { paint(pixels); layerInfo=info||null; drawBox(); }
+    if (id>=clearPreviewAt && previewContext) { previewContext.clearRect(0,0,MODEL.width,MODEL.height); clearPreviewAt=Infinity; }
     if (pending) { pending=false; redraw(); }
     else { clearTimeout(busyTimer); busyBadge.hidden=true; }
   }
@@ -9171,12 +9269,17 @@ const MODEL = {
     busyTimer=setTimeout(()=>{ busyBadge.hidden=false; }, 160);
     const id=++sequence, payload={...options, look:look()};
     if (sentVersion!==starVersion) { payload.starList=currentStars().entries; sentVersion=starVersion; }
+    if (paintSent!==paintVersion) {
+      payload.paintChanged=true;
+      payload.paint=paintMask ? {mask:paintMask, w:PAINT_W, h:PAINT_H} : null;
+      paintSent=paintVersion;
+    }
     if (worker) { busy=true; worker.postMessage({options:payload,id}); }
     else { const pixels=cache(payload); receive(pixels,id,cache.info); }
   }
   function fallback() {
     if (worker) {worker.terminate();worker=null;}
-    busy=false; pending=false; sentVersion=-1;
+    busy=false; pending=false; sentVersion=-1; paintSent=-1;
     cache=rasterEngine(MODEL);
     redraw();
   }
@@ -9194,7 +9297,7 @@ const MODEL = {
   const STAR_DEFAULTS = { fondo:2500, sol:250, rojas:300, azules:20, destellos:6 };
   const starState = { lagoon:true, seed:1, counts:{fondo:0,sol:0,rojas:0,azules:0,destellos:0},
     added:[], removed:new Set(), nextId:1 };
-  let starVersion=0, sentVersion=-1, starCache=null;
+  let starVersion=0, sentVersion=-1, starCache=null, paintVersion=0, paintSent=0;
 
   function rng(seed) {
     let state=(Math.imul(seed+1,0x9e3779b1)>>>0)||1;
@@ -9259,7 +9362,7 @@ const MODEL = {
   let tab='nebula', starTool=DEFAULT_STAR_TOOL, tool='look', toolKind='destellos';
   function setTab(next) {
     tab=next;
-    tool=tab==='stars' ? starTool : 'look';
+    tool=tab==='stars' ? starTool : tab==='paint' ? 'paint' : 'look';
     const scroller=panel.querySelector('.scroll');
     if (scroller) scroller.scrollTop=0;
     syncUI();
@@ -9272,7 +9375,7 @@ const MODEL = {
   function syncUI() {
     setRadio('type', options.type); setRadio('preset', options.preset); setRadio('shape', options.shape);
     setRadio('tool', starTool); setRadio('toolKind', toolKind);
-    for (const name of ['nebula','stars']) {
+    for (const name of ['nebula','stars','paint']) {
       const tabButton=document.getElementById('tab-'+name), pane=document.getElementById('pane-'+name);
       if (tabButton) tabButton.setAttribute('aria-selected', String(tab===name));
       if (pane) pane.hidden=tab!==name;
@@ -9308,7 +9411,13 @@ const MODEL = {
     setText('rotation-value', Math.round(options.rotation)+'°');
     setText('scale-value', Math.round(options.scale*100)+'%');
     hint.hidden=tool==='look';
-    hint.textContent=tool==='transform'
+    setRadio('brush', brush);
+    set('brush-size', brushSize); setText('brush-size-value', brushSize);
+    set('brush-flow', brushFlow); setText('brush-flow-value', brushFlow+'%');
+    canvas.classList.toggle('painting', tool==='paint');
+    hint.textContent=tool==='paint'
+      ? 'Paint on the image. Each stroke turns into nebula when you let go.'
+      : tool==='transform'
       ? 'Drag inside the box to move, a corner to resize, outside to rotate (Shift snaps to 15°). Enter to finish.'
       : tool==='add'
       ? 'Click the image to add '+KIND_NAMES[toolKind]+'. Esc to finish.'
@@ -9352,6 +9461,9 @@ const MODEL = {
         if (tool==='add') panel.querySelector('.kinds').scrollIntoView({block:'nearest', behavior:'smooth'});
         return;
       case 'toolKind': toolKind=t.value; return syncUI();
+      case 'brush': brush=t.value; return syncUI();
+      case 'brushSize': brushSize=Number(t.value); return syncUI();
+      case 'brushFlow': brushFlow=Number(t.value); return syncUI();
       default: return;
     }
     syncUI(); redraw();
@@ -9363,6 +9475,15 @@ const MODEL = {
   const actions={
     reroll() { options.seed=1+Math.floor(Math.random()*9999); syncUI(); redraw(); },
     tab(button) { setTab(button.dataset.tab); },
+    paintUndo() {
+      if (!paintHistory.length) return;
+      paintMask=paintHistory.pop(); paintChanged();
+    },
+    paintClear() {
+      if (!paintMask) return;
+      paintHistory.push(paintMask.slice()); if (paintHistory.length>6) paintHistory.shift();
+      paintMask=null; paintChanged();
+    },
     transform() { tool=tool==='transform' ? 'look' : 'transform'; syncUI(); },
     resetTransform() { Object.assign(options, {offsetX:0, offsetY:0, rotation:0, scale:1}); syncUI(); redraw(); },
     // With nothing generated yet, a new field replaces the Lagoon stars entirely.
@@ -9392,7 +9513,8 @@ const MODEL = {
       Object.assign(starState, { lagoon:true, seed:1, added:[], removed:new Set() });
       for (const kind of STAR_KINDS) starState.counts[kind]=0;
       starTool=DEFAULT_STAR_TOOL;
-      tool=tab==='stars' ? starTool : 'look';
+      tool=tab==='stars' ? starTool : tab==='paint' ? 'paint' : 'look';
+      clearPaint();
       starsChanged();
     },
     save() {
@@ -9413,7 +9535,7 @@ const MODEL = {
   });
   document.addEventListener('keydown', event=>{
     if (tool==='transform' && (event.key==='Escape' || event.key==='Enter')) { tool='look'; syncUI(); return; }
-    if (event.key!=='Escape' || tool==='look') return;
+    if (event.key!=='Escape' || tool==='look' || tool==='paint') return;
     starTool='look'; tool='look'; syncUI();
   });
 
@@ -9428,14 +9550,84 @@ const MODEL = {
     }
   });
 
+  // PAINT
+  // Strokes accumulate into a half-resolution mask with one channel per brush. The
+  // raw stroke shows as a glow on an overlay; when the pen lifts, the mask goes to
+  // the engine, which turns it into gas, and the overlay clears once that arrives.
+  const PAINT_W=Math.ceil(MODEL.width/2), PAINT_H=Math.ceil(MODEL.height/2);
+  const BRUSH_CHANNEL={ha:0, o3:1, blue:2, dust:3};
+  const BRUSH_COLOR={ha:'255,95,115', o3:'63,208,212', blue:'125,152,255', dust:'20,12,10', erase:'200,200,200'};
+  const preview=document.getElementById('paint-preview'), ring=document.getElementById('brush-ring');
+  const previewContext=preview.getContext ? preview.getContext('2d') : null;
+  let brush='ha', brushSize=60, brushFlow=40;
+  let paintMask=null, paintHistory=[], painting=null, clearPreviewAt=Infinity;
+  function paintChanged() { paintVersion++; redraw(); }
+  function clearPaint() { paintMask=null; paintHistory=[]; paintVersion++; }
+  function stamp(x, y) {
+    const cx=x/2, cy=y/2, r=Math.max(1,brushSize/4), flow=brushFlow/100*.35;
+    const channel=BRUSH_CHANNEL[brush];
+    for (let py=Math.max(0,Math.floor(cy-r));py<=Math.min(PAINT_H-1,Math.ceil(cy+r));py++) {
+      for (let px=Math.max(0,Math.floor(cx-r));px<=Math.min(PAINT_W-1,Math.ceil(cx+r));px++) {
+        const d2=((px-cx)**2+(py-cy)**2)/(r*r);
+        if (d2>=1) continue;
+        const a=flow*(1-d2)*(1-d2), i=(py*PAINT_W+px)*4;
+        if (brush==='erase') { for (let c=0;c<4;c++) paintMask[i+c]*=1-a*2; }
+        else paintMask[i+channel]+=a*(1-paintMask[i+channel]);
+      }
+    }
+    if (previewContext) {
+      const glow=previewContext.createRadialGradient(x,y,0,x,y,brushSize/2);
+      glow.addColorStop(0,'rgba('+BRUSH_COLOR[brush]+','+(brushFlow/100*.5)+')');
+      glow.addColorStop(1,'rgba('+BRUSH_COLOR[brush]+',0)');
+      previewContext.globalCompositeOperation=brush==='dust' || brush==='erase' ? 'source-over' : 'lighter';
+      previewContext.fillStyle=glow;
+      previewContext.fillRect(x-brushSize/2,y-brushSize/2,brushSize,brushSize);
+    }
+  }
+  function moveRing(event) {
+    if (tool!=='paint') { ring.hidden=true; return; }
+    const rect=canvas.getBoundingClientRect(), size=brushSize*rect.width/MODEL.width;
+    ring.hidden=false;
+    ring.style.left=(event.clientX-rect.left)+'px'; ring.style.top=(event.clientY-rect.top)+'px';
+    ring.style.width=size+'px'; ring.style.height=size+'px';
+  }
+  canvas.addEventListener('pointerdown', event=>{
+    if (!ready || tool!=='paint') return;
+    if (!paintMask) paintMask=new Float32Array(PAINT_W*PAINT_H*4);
+    paintHistory.push(paintMask.slice()); if (paintHistory.length>6) paintHistory.shift();
+    const [x,y]=imagePoint(event);
+    painting={x,y};
+    stamp(x,y);
+    canvas.setPointerCapture(event.pointerId);
+  });
+  canvas.addEventListener('pointermove', event=>{
+    moveRing(event);
+    if (!painting) return;
+    const [x,y]=imagePoint(event), dist=Math.hypot(x-painting.x,y-painting.y), spacing=Math.max(1,brushSize/8);
+    for (let d=spacing; d<=dist; d+=spacing) {
+      const t=d/dist;
+      stamp(painting.x+(x-painting.x)*t, painting.y+(y-painting.y)*t);
+    }
+    if (dist>=spacing) painting={x,y};
+  });
+  const endStroke=()=>{
+    if (!painting) return;
+    painting=null;
+    clearPreviewAt=sequence+1;
+    paintChanged();
+  };
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+  canvas.addEventListener('pointerleave', ()=>{ ring.hidden=true; });
+
   // FREE TRANSFORM BOX
   // Drawn in image coordinates over the canvas. The box follows the options at once,
   // while the worker catches up with a quick preview and then the exact rebuild.
   const box=document.getElementById('transform-box'), boxGroup=document.getElementById('tb');
-  const imagePoint=event=>{
+  function imagePoint(event) {
     const rect=canvas.getBoundingClientRect();
     return [(event.clientX-rect.left)*MODEL.width/rect.width, (event.clientY-rect.top)*MODEL.height/rect.height];
-  };
+  }
   function drawBox() {
     const on=tool==='transform' && !!layerInfo && options.type!=='laguna';
     // SVG elements have no `hidden` property; toggle the attribute itself.
@@ -9492,7 +9684,7 @@ const MODEL = {
   window.addEventListener('resize', ()=>drawBox());
 
   canvas.addEventListener('click', event=>{
-    if (!ready || tool==='look' || tool==='transform') return;
+    if (!ready || tool==='look' || tool==='transform' || tool==='paint') return;
     const box=canvas.getBoundingClientRect();
     const x=(event.clientX-box.left)*MODEL.width/box.width, y=(event.clientY-box.top)*MODEL.height/box.height;
     if (tool==='erase') {
