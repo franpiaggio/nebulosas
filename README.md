@@ -19,9 +19,9 @@ python3 -m http.server 8000
 
 ## Qué se puede hacer
 
-El panel de la derecha está ordenado de lo general a lo fino.
+El panel de la derecha tiene dos pestañas: **Nebulosa** (tipo, color, forma y posición) y **Estrellas** (campo y edición con clics).
 
-**Nebulosa.** La Laguna es la reconstrucción fija de una foto real. Los otros cinco tipos se generan:
+**Tipo.** Un desplegable que arranca en la Laguna, la reconstrucción fija de una foto real. Los otros cinco tipos se generan:
 
 | Tipo | Inspirada en | Rasgos |
 | --- | --- | --- |
@@ -35,13 +35,13 @@ El panel de la derecha está ordenado de lo general a lo fino.
 
 **Color.** Siete paletas (Original, Hubble, Hielo, Fuego, Esmeralda, Violeta, Mono) y un control para girar el tono.
 
-**Forma.** Deforma el gas sin tocar las estrellas: Remolino, Inflar, Turbulencia, Espejo y Caleidoscopio, con un control de intensidad.
+**Forma.** Deforma el gas sin tocar las estrellas: Remolino, Inflar, Turbulencia y Espejo, con un control de intensidad.
 
 **Estrellas.**
 - Prender o apagar las estrellas originales de la Laguna.
 - Sumar estrellas generadas por tipo: de fondo, tipo Sol, enanas rojas, gigantes azules y destellos con cruz de difracción.
 - "Nuevo campo de estrellas" reemplaza el campo por uno generado.
-- Editar con clics: el modo Agregar está activo desde el inicio, así que un clic en la imagen suma una estrella. Borrar quita la más cercana y Mirar desactiva los clics. Esc sale de cualquier modo.
+- Editar con clics: al entrar en la pestaña Estrellas el modo Agregar ya está activo, así que un clic en la imagen suma una estrella. Borrar quita la más cercana y Mirar desactiva los clics. Esc sale de cualquier modo. En la pestaña Nebulosa los clics no tocan las estrellas.
 
 **Abajo del panel**: prender o apagar las capas (gas, estrellas, grano), "Sorprendeme" para una combinación al azar, "Guardar PNG" y "Volver a la Laguna original".
 

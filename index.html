@@ -81,7 +81,24 @@ canvas.moving.dragging{cursor:grabbing}
 #move-button[aria-pressed=true]{background:var(--halpha);border-color:var(--halpha);color:var(--halpha-ink);font-weight:600}
 .variant small{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
 #panel:not(.is-generated) .variant{display:none}
-#panel.is-generated .lagoon-note{display:none}
+
+/* Tabs: nebula or stars, never both at once. */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:18px 22px 4px;padding:3px;border-radius:12px;background:var(--raised)}
+.tabs button{border:0;background:transparent;color:var(--muted);padding:9px 8px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer}
+.tabs button:hover{color:var(--text)}
+.tabs button[aria-selected=true]{background:#3a2a38;color:var(--text)}
+.tabs button:disabled{cursor:wait;opacity:.5}
+.tabs span{margin-left:7px;font-weight:400;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* Type picker: shows the current type; opening it reveals the others. */
+.type-picker summary{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line);cursor:pointer;list-style:none;font-size:14px}
+.type-picker summary::-webkit-details-marker{display:none}
+.type-picker summary:hover{border-color:var(--muted)}
+.type-picker .type-icon svg{display:block;width:24px;height:24px;fill:none;stroke:var(--halpha);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.type-picker .chevron{margin-left:auto;width:8px;height:8px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.type-picker[open] .chevron{transform:translateY(2px) rotate(-135deg)}
+.type-picker[open] summary{border-color:var(--halpha)}
+.type-picker .tiles{margin-top:8px}
 
 /* Sliders */
 .slider{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 10px;margin-top:12px}
@@ -164,10 +181,17 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 </main>
 
 <form id="panel" aria-busy="true" aria-label="Controles">
+<div class="tabs" role="tablist" aria-label="Qué editar">
+<button id="tab-nebula" type="button" role="tab" aria-selected="true" aria-controls="pane-nebula" data-action="tab" data-tab="nebula" disabled>Nebulosa</button>
+<button id="tab-stars" type="button" role="tab" aria-selected="false" aria-controls="pane-stars" data-action="tab" data-tab="stars" disabled>Estrellas<span id="tab-star-count"></span></button>
+</div>
 <div class="scroll">
 
+<div id="pane-nebula" role="tabpanel" aria-labelledby="tab-nebula">
 <section class="group" aria-labelledby="h-type">
-<h2 id="h-type">Nebulosa</h2>
+<h2 id="h-type">Tipo</h2>
+<details class="type-picker" id="type-picker">
+<summary><span id="type-current-icon" class="type-icon" aria-hidden="true"></span><span id="type-current">Laguna</span><span class="chevron" aria-hidden="true"></span></summary>
 <div class="tiles" role="radiogroup" aria-labelledby="h-type">
 <label class="pick"><input type="radio" name="type" value="laguna" checked disabled><span><svg viewBox="0 0 24 24"><path d="M5 15c-2-1-2-5 1-6 0-3 4-5 6-3 2-2 6-1 6 2 3 0 4 4 2 6 1 2-1 5-4 4-2 2-6 2-7 0-3 1-5-1-4-3z"/><circle cx="13" cy="12" r="1.6"/></svg>Laguna</span></label>
 <label class="pick"><input type="radio" name="type" value="planetaria" disabled><span><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="7"/><ellipse cx="12" cy="12" rx="4.5" ry="3.8"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>Planetaria</span></label>
@@ -176,7 +200,7 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <label class="pick"><input type="radio" name="type" value="pilares" disabled><span><svg viewBox="0 0 24 24"><path d="M5 21c0-6 1-11 2.5-12S10 15 10 21M11 21c0-8 1.5-15 3-15s2.5 7 2.5 15M17 21c0-5 1-8 2-8s1.5 3 1.5 8"/></svg>Pilares</span></label>
 <label class="pick"><input type="radio" name="type" value="reflexion" disabled><span><svg viewBox="0 0 24 24"><path d="M9 4v6M6 7h6M16 11v5M13.5 13.5h5M7 15v4M5 17h4"/><path d="M3 20c5-3 13-12 18-15" opacity=".45"/></svg>Reflexión</span></label>
 </div>
-<p class="note lagoon-note">La Laguna es la reconstrucción fija de una foto real. Los otros tipos se generan y cada variante es distinta.</p>
+</details>
 <div class="variant"><small>Variante <span id="seed-value">1</span></small><button class="btn" type="button" data-action="reroll" disabled>Otra variante</button></div>
 <div class="variant move-row"><button id="move-button" class="btn" type="button" data-action="move" aria-pressed="false" disabled>Mover en la imagen</button><button id="center-button" class="btn quiet" type="button" data-action="center" disabled>Centrar</button></div>
 </section>
@@ -206,7 +230,6 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <label class="pick"><input type="radio" name="shape" value="inflar" disabled><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg>Inflar</span></label>
 <label class="pick"><input type="radio" name="shape" value="turbulencia" disabled><span><svg viewBox="0 0 24 24"><path d="M3 8c3-3 5 3 9 0s6 3 9 0M3 13c3-3 5 3 9 0s6 3 9 0M3 18c3-3 5 3 9 0s6 3 9 0"/></svg>Turbulencia</span></label>
 <label class="pick"><input type="radio" name="shape" value="espejo" disabled><span><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 2"/><path d="M10 7c-4 0-6 3-6 5s2 5 6 5M14 7c4 0 6 3 6 5s-2 5-6 5"/></svg>Espejo</span></label>
-<label class="pick"><input type="radio" name="shape" value="caleidoscopio" disabled><span><svg viewBox="0 0 24 24"><path d="M12 3l2.6 4.5H20L17.3 12 20 16.5h-5.4L12 21l-2.6-4.5H4L6.7 12 4 7.5h5.4z"/></svg>Caleidoscopio</span></label>
 </div>
 <div class="slider amount-slider">
 <label for="amount">Intensidad</label><output id="amount-value" for="amount">60</output>
@@ -214,8 +237,11 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 </div>
 </section>
 
-<section class="group" aria-labelledby="h-stars">
-<h2 id="h-stars">Estrellas</h2>
+</div>
+
+<div id="pane-stars" role="tabpanel" aria-labelledby="tab-stars" hidden>
+<section class="group" aria-labelledby="h-field">
+<h2 id="h-field">Campo de estrellas</h2>
 <label class="switch">Estrellas originales de la Laguna<input id="lagoon-stars" name="lagoonStars" type="checkbox" checked disabled></label>
 <h3>Sumar estrellas generadas</h3>
 <div class="slider"><label for="count-fondo"><i class="dot fondo"></i>De fondo</label><output id="count-fondo-value">0</output><input id="count-fondo" name="count" data-kind="fondo" type="range" min="0" max="6000" step="50" value="0" disabled></div>
@@ -224,7 +250,9 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 <div class="slider"><label for="count-azules"><i class="dot azules"></i>Gigantes azules</label><output id="count-azules-value">0</output><input id="count-azules" name="count" data-kind="azules" type="range" min="0" max="100" step="1" value="0" disabled></div>
 <div class="slider"><label for="count-destellos"><i class="dot destellos"></i>Destellos</label><output id="count-destellos-value">0</output><input id="count-destellos" name="count" data-kind="destellos" type="range" min="0" max="20" step="1" value="0" disabled></div>
 <div class="row"><button class="btn" type="button" data-action="starReroll" disabled>Nuevo campo de estrellas</button><button class="btn quiet" type="button" data-action="starReset" disabled>Deshacer clics</button></div>
-<h3>Editar con clics</h3>
+</section>
+<section class="group" aria-labelledby="h-clicks">
+<h2 id="h-clicks">Editar con clics</h2>
 <div class="segmented" role="radiogroup" aria-label="Herramienta">
 <label class="pick"><input type="radio" name="tool" value="look" disabled><span>Mirar</span></label>
 <label class="pick"><input type="radio" name="tool" value="add" checked disabled><span>Agregar</span></label>
@@ -239,6 +267,7 @@ input[type=range]:disabled{cursor:not-allowed;opacity:.4}
 </div>
 <span id="star-total"></span>
 </section>
+</div>
 
 </div>
 <div class="dock">
@@ -8999,7 +9028,6 @@ const MODEL = {
       if (shape==='turbulencia' && !flowX) buildFlow();
       const out=warped ? warped.fill(0) : new Float32Array(count*3);
       const radius=Math.min(width,height)*.45, cx=current.centerX, cy=current.centerY;
-      const segment=Math.PI/3;
       for (let y=0,p=0;y<height;y++) for (let x=0;x<width;x++,p++) {
         const o=p*3, dx=x-cx, dy=y-cy, r2=dx*dx+dy*dy;
         if (shape==='remolino') {
@@ -9015,17 +9043,6 @@ const MODEL = {
           // Blend toward the average of both halves: symmetric, with no seam.
           fetch(out, o, x, y, 1-amount/2);
           fetch(out, o, 2*cx-x, y, amount/2);
-        } else if (shape==='caleidoscopio') {
-          // Six mirrored wedges inside a radius that grows with the amount.
-          const r=Math.sqrt(r2), edge=(amount*2.3*radius-r)/90;
-          const f=edge<=0 ? 0 : edge>=1 ? 1 : edge*edge*(3-2*edge);
-          if (f<1) fetch(out, o, x, y, 1-f);
-          if (f>0) {
-            let angle=Math.atan2(dy,dx)%segment;
-            if (angle<0) angle+=segment;
-            if (angle>segment/2) angle=segment-angle;
-            fetch(out, o, cx+r*Math.cos(angle), cy+r*Math.sin(angle), f);
-          }
         } else {
           fetch(out, o, x, y, 1);
         }
@@ -9176,9 +9193,18 @@ const MODEL = {
   const KIND_NAMES={ fondo:'una estrella de fondo', sol:'una estrella tipo Sol', rojas:'una enana roja',
     azules:'una gigante azul', destellos:'un destello' };
   const DEFAULT_OPTIONS={...options};
-  // Clicking the plate adds stars from the start; Esc or "Mirar" turns it off.
-  const DEFAULT_TOOL='add';
-  let tool=DEFAULT_TOOL, toolKind='destellos';
+  // Two tabs: nebula or stars. Plate clicks follow the tab: on "Estrellas" they use
+  // the chosen star tool (adding stars by default), on "Nebulosa" they only move the
+  // cloud when "Mover" is on. `tool` is the effective tool; `starTool` is remembered.
+  const DEFAULT_STAR_TOOL='add';
+  let tab='nebula', starTool=DEFAULT_STAR_TOOL, tool='look', toolKind='destellos';
+  function setTab(next) {
+    tab=next;
+    tool=tab==='stars' ? starTool : 'look';
+    const scroller=panel.querySelector('.scroll');
+    if (scroller) scroller.scrollTop=0;
+    syncUI();
+  }
 
   function setRadio(name, value) {
     panel.querySelectorAll('input[name="'+name+'"]').forEach(input=>{ input.checked=input.value===String(value); });
@@ -9186,7 +9212,17 @@ const MODEL = {
   function setText(id, text) { const el=document.getElementById(id); if (el) el.textContent=text; }
   function syncUI() {
     setRadio('type', options.type); setRadio('preset', options.preset); setRadio('shape', options.shape);
-    setRadio('tool', tool); setRadio('toolKind', toolKind);
+    setRadio('tool', starTool); setRadio('toolKind', toolKind);
+    for (const name of ['nebula','stars']) {
+      const tabButton=document.getElementById('tab-'+name), pane=document.getElementById('pane-'+name);
+      if (tabButton) tabButton.setAttribute('aria-selected', String(tab===name));
+      if (pane) pane.hidden=tab!==name;
+    }
+    setText('tab-star-count', currentStars().entries.length.toLocaleString('es'));
+    setText('type-current', TYPE_NAMES[options.type]);
+    const currentIcon=document.getElementById('type-current-icon');
+    const pickedIcon=panel.querySelector('input[name="type"][value="'+options.type+'"] + span svg');
+    if (currentIcon && pickedIcon) currentIcon.innerHTML=pickedIcon.outerHTML;
     panel.querySelectorAll('input[name="layer"]').forEach(input=>{ input.checked=options[input.value]; });
     const set=(id, value)=>{ const el=document.getElementById(id); if (el) el.value=value; };
     set('hue', options.hue); set('amount', options.amount);
@@ -9230,7 +9266,11 @@ const MODEL = {
     // Ranges react while dragging (input); everything else on change.
     if ((event.type==='input')!==isRange) return;
     switch (t.name) {
-      case 'type': options.type=t.value; if (tool==='move' && t.value==='laguna') tool='look'; break;
+      case 'type':
+        options.type=t.value;
+        if (tool==='move' && t.value==='laguna') tool='look';
+        { const picker=document.getElementById('type-picker'); if (picker) picker.open=false; }
+        break;
       case 'preset': options.preset=t.value; break;
       case 'hue': options.hue=Number(t.value); break;
       case 'shape': options.shape=t.value; break;
@@ -9239,7 +9279,7 @@ const MODEL = {
       case 'lagoonStars': starState.lagoon=t.checked; return starsChanged();
       case 'count': starState.counts[t.dataset.kind]=Number(t.value); return starsChanged();
       case 'tool':
-        tool=t.value; syncUI();
+        starTool=tool=t.value; syncUI();
         // The kind chips appear below the fold of the panel; bring them into view.
         if (tool==='add') panel.querySelector('.kinds').scrollIntoView({block:'nearest', behavior:'smooth'});
         return;
@@ -9254,6 +9294,7 @@ const MODEL = {
   const random=(list)=>list[Math.floor(Math.random()*list.length)];
   const actions={
     reroll() { options.seed=1+Math.floor(Math.random()*9999); syncUI(); redraw(); },
+    tab(button) { setTab(button.dataset.tab); },
     move() { tool=tool==='move' ? 'look' : 'move'; syncUI(); },
     center() { options.offsetX=0; options.offsetY=0; syncUI(); redraw(); },
     // With nothing generated yet, a new field replaces the Laguna stars entirely.
@@ -9272,7 +9313,7 @@ const MODEL = {
       options.seed=1+Math.floor(Math.random()*9999);
       options.preset=random(Object.keys(PRESETS));
       options.hue=Math.random()<.25 ? Math.floor(Math.random()*360) : 0;
-      options.shape=Math.random()<.5 ? 'original' : random(['remolino','inflar','turbulencia','espejo','caleidoscopio']);
+      options.shape=Math.random()<.5 ? 'original' : random(['remolino','inflar','turbulencia','espejo']);
       options.amount=30+Math.floor(Math.random()*50);
       options.offsetX=0; options.offsetY=0;
       if (tool==='move' && options.type==='laguna') tool='look';
@@ -9282,7 +9323,8 @@ const MODEL = {
       Object.assign(options, DEFAULT_OPTIONS);
       Object.assign(starState, { lagoon:true, seed:1, added:[], removed:new Set() });
       for (const kind of STAR_KINDS) starState.counts[kind]=0;
-      tool=DEFAULT_TOOL;
+      starTool=DEFAULT_STAR_TOOL;
+      tool=tab==='stars' ? starTool : 'look';
       starsChanged();
     },
     save() {
@@ -9299,10 +9341,12 @@ const MODEL = {
   };
   panel.addEventListener('click', event=>{
     const button=event.target.closest ? event.target.closest('button[data-action]') : null;
-    if (button && ready && actions[button.dataset.action]) actions[button.dataset.action]();
+    if (button && ready && actions[button.dataset.action]) actions[button.dataset.action](button);
   });
   document.addEventListener('keydown', event=>{
-    if (event.key==='Escape' && tool!=='look') { tool='look'; syncUI(); }
+    if (event.key!=='Escape' || tool==='look') return;
+    if (tool!=='move') starTool='look';
+    tool='look'; syncUI();
   });
 
   // Palette swatches preview each preset: gradient maps show their own stops, hue
