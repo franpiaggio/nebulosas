@@ -33,6 +33,9 @@ button,input{font:inherit;color:inherit}
 figure{position:relative;margin:0;line-height:0;width:min(100%,calc((100svh - 48px)*1536/859))}
 canvas{display:block;width:100%;height:auto;aspect-ratio:1536/859;border-radius:3px}
 #plate{background:#100e11;box-shadow:0 30px 80px -40px #000}
+#photo{position:absolute;inset:0;width:100%;height:100%;border-radius:3px;transition:opacity .5s ease}
+#photo.out{opacity:0;transition:none;pointer-events:none}
+#photo:not(.out)~.caption{opacity:0}
 #outlines{position:absolute;inset:0;height:100%;pointer-events:none;transition:opacity .5s ease}
 .caption{position:absolute;left:22px;bottom:18px;line-height:1.15;pointer-events:none;text-shadow:0 1px 18px #000,0 0 2px #000}
 .caption b{display:block;font-family:var(--serif);font-size:22px;font-weight:400}
@@ -86,8 +89,9 @@ a{color:var(--halpha)}
     <figure>
       <canvas id="plate" width="1536" height="859"></canvas>
       <canvas id="outlines" width="1536" height="859"></canvas>
+      <img id="photo" src="lagoon-photo.jpg" width="1536" height="859" alt="The original photo of the Lagoon Nebula that the model was fitted to">
       <figcaption class="caption"><b id="view-name"></b><span id="view-detail"></span></figcaption>
-      <div id="tag" class="out"></div>
+      <div id="tag">Original photo</div>
       <div id="busy" hidden>Computing…</div>
     </figure>
   </div>
@@ -8710,6 +8714,8 @@ const MODEL = {
     const delay = stars ? 24 : built < 20 ? 120 : 24;
     setTimeout(tick, built === TOTAL && starsBuilt === 0 ? 250 : delay);
   }
+  // The real photo sits over the plate until the first interaction; then the code takes over.
+  function hidePhoto() { $('photo').classList.add('out'); }
   function tag(text) {
     $('tag').textContent = text || '';
     $('tag').classList.toggle('out', !text);
@@ -8717,7 +8723,7 @@ const MODEL = {
   function stop() { playing = false; $('play').textContent = 'Reproduce'; }
   $('play').addEventListener('click', () => {
     if (playing) { stop(); return; }
-    tag(null);
+    tag(null); hidePhoto();
     revealId++; transition = false;
     view = 'sum'; document.querySelector('input[value=sum]').checked = true;
     target = 0; frame = 0; clearAll();
@@ -8727,11 +8733,11 @@ const MODEL = {
     playing = true; $('play').textContent = 'Stop';
     setTimeout(tick, 350);
   });
-  $('step').addEventListener('click', () => { stop(); tag(null); seek(frameOf(position())+1); });
-  $('reset').addEventListener('click', () => { stop(); tag(null); seek(0); });
-  $('slider').addEventListener('input', e => { stop(); tag(null); seek(+e.target.value); });
+  $('step').addEventListener('click', () => { stop(); tag(null); hidePhoto(); seek(frameOf(position())+1); });
+  $('reset').addEventListener('click', () => { stop(); tag(null); hidePhoto(); seek(0); });
+  $('slider').addEventListener('input', e => { stop(); tag(null); hidePhoto(); seek(+e.target.value); });
   document.querySelectorAll('input[name=view]').forEach(el => el.addEventListener('change', () => {
-    stop(); tag(null);
+    stop(); tag(null); hidePhoto();
     snapshot();
     view = el.value;
     if (view === 'final' && position() < ALL) { frame = LAST; target = ALL; $('slider').value = LAST; work(); }
@@ -8755,10 +8761,9 @@ const MODEL = {
   }
   for (const key in prefs) $('show-'+key).addEventListener('change', e => { prefs[key] = e.target.checked; composite(); });
 
-  // Opens on the finished image, tagged, ready to be reproduced.
+  // Opens on the photo while the finished reconstruction is computed underneath.
   $('slider').max = LAST; $('slider').value = LAST;
   target = ALL;
-  onReady = () => tag('Original photo');
   work();
 })();
 </script>

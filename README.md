@@ -62,7 +62,7 @@ It is not a photo. The image was measured outside the browser and fitted with si
 
 The script that did the fitting is not part of this project.
 
-`capas.html` shows that model layer by layer: the blobs added one at a time in the order the fit produced them, the light they add and the light they take away, and the cutouts and stars on top. It carries its own copy of `MODEL`.
+`capas.html` shows that model layer by layer: the blobs added one at a time in the order the fit produced them, the light they add and the light they take away, and the cutouts and stars on top. It carries its own copy of `MODEL`, and opens on the original photo (`lagoon-photo.jpg`) until you press Reproduce.
 
 ### The engine
 
