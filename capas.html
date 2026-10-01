@@ -75,11 +75,23 @@ dd{margin:0;font-variant-numeric:tabular-nums;text-align:right}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid;margin-right:5px;vertical-align:-1px}
 a{color:var(--halpha)}
 
+/* Phones: the image goes edge to edge in a tall 4:5 frame centered on the nebula and
+   stays pinned at the top; the controls scroll underneath, playback first. */
 @media (max-width:860px){
-  .app{grid-template-columns:1fr;height:auto}
-  .stage{padding:16px}
+  .app{display:block;height:auto}
+  .stage{position:sticky;top:0;z-index:2;padding:0;background:var(--ink);box-shadow:0 12px 24px -12px #000}
   figure{width:100%}
-  #panel{border-left:0;border-top:1px solid var(--line);padding:20px 16px}
+  canvas,#photo{height:min(125vw,62svh);aspect-ratio:auto;object-fit:cover;object-position:59% 50%;border-radius:0}
+  #plate{box-shadow:none}
+  .caption{left:16px;bottom:14px}
+  .caption b{font-size:19px}
+  #tag{top:12px;left:12px}
+  #busy{top:12px;right:12px}
+  #panel{display:flex;flex-direction:column;border-left:0;padding:16px 16px 28px}
+  #panel h1,#panel .lede{order:1}
+  #panel .group{order:2}
+  #panel .group.playback{order:0;padding-bottom:16px;margin-bottom:18px}
+  #panel .playback .note{display:none}
 }
 </style>
 </head>
@@ -99,7 +111,7 @@ a{color:var(--halpha)}
     <h1>Lagoon, layer by layer</h1>
     <p class="lede">The Lagoon in <a href="index.html">the playground</a> is not a photo. It is 6,500 Gaussian blobs fitted to one, plus 1,744 stars. The blobs are stored in the order the fit added them: big first, small last.</p>
 
-    <section class="group">
+    <section class="group playback">
       <h2>Progress</h2>
       <div class="count"><output id="n">0</output><small id="of">of 6,500</small></div>
       <input id="slider" type="range" min="0" max="1000" value="1000" step="1" aria-label="Blobs and stars added">
