@@ -8575,7 +8575,8 @@ const MODEL = {
     const id = ++revealId, start = performance.now(), duration = 850, m = mask.getContext('2d');
     (function frame(now) {
       if (id !== revealId) return;
-      const t = Math.min(1, (now-start)/duration), e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2, 3)/2;
+      // The first animation frame can be stamped before `start`; clamp so the radius never goes negative.
+      const t = Math.max(0, Math.min(1, (now-start)/duration)), e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2, 3)/2;
       const r = e*REACH, feather = 160;
       m.globalCompositeOperation = 'source-over';
       m.clearRect(0, 0, W, H);
