@@ -62,6 +62,8 @@ It is not a photo. The image was measured outside the browser and fitted with si
 
 The script that did the fitting is not part of this project.
 
+`capas.html` shows that model layer by layer: the blobs added one at a time in the order the fit produced them, the light they add and the light they take away, and the cutouts and stars on top. It carries its own copy of `MODEL`.
+
 ### The engine
 
 `rasterEngine(model)` runs in a Web Worker built from its own source. If the browser doesn't allow workers, it runs on the page. The engine builds separate layers in `Float32Array`s: gas, stars and grain. Each render only combines them and applies the palette, which is why color changes are instant.
